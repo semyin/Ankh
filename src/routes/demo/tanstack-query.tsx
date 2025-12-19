@@ -1,6 +1,6 @@
-import { useCallback, useState } from 'react'
+import { Suspense, useCallback, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useMutation, useSuspenseQuery } from '@tanstack/react-query'
 
 export const Route = createFileRoute('/demo/tanstack-query')({
   component: TanStackQueryDemo,
@@ -12,10 +12,10 @@ type Todo = {
 }
 
 function TanStackQueryDemo() {
-  const { data, refetch } = useQuery<Todo[]>({
+  const { data, refetch } = useSuspenseQuery<Todo[]>({
     queryKey: ['todos'],
-    queryFn: () => fetch('/demo/api/tq-todos').then((res) => res.json()),
-    initialData: [],
+    queryFn: () => fetch('http://localhost:3000/demo/api/tq-todos').then((res) => res.json()),
+    // initialData: [],
   })
 
   const { mutate: addTodo } = useMutation({
@@ -35,6 +35,7 @@ function TanStackQueryDemo() {
   }, [addTodo, todo])
 
   return (
+    <Suspense fallback={<div>Loading...</div>}>
     <div
       className="flex items-center justify-center min-h-screen bg-gradient-to-br from-red-900 via-red-800 to-black p-4 text-white"
       style={{
@@ -77,5 +78,6 @@ function TanStackQueryDemo() {
         </div>
       </div>
     </div>
+    </Suspense>
   )
 }
