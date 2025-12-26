@@ -43,6 +43,14 @@ npm run check        # 运行 Biome 的完整检查
 - Router 通过 context 共享 QueryClient 实例
 - 使用 `setupRouterSsrQueryIntegration` 实现 SSR 数据同步
 
+### API 路由（Hono）
+- 使用 **Hono** 作为后端 API 框架
+- `src/server.ts` 是 Hono 应用入口，配置中间件和路由
+- `src/routes/api/$.ts` 是 catch-all 路由，将 `/api/*` 请求转发给 Hono
+- API 路由模块放在 `src/routes-api/` 目录（如 `todos.ts`）
+- 内置中间件：logger、cors
+- 添加新 API：在 `src/routes-api/` 创建路由文件，然后在 `src/server.ts` 中挂载
+
 ### 样式
 - 使用 **Tailwind CSS v4**（通过 Vite 插件）
 - 全局样式在 `src/styles.css`
