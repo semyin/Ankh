@@ -1,66 +1,74 @@
-import type { Context } from "hono";
-import { Hono } from "hono";
-import { cors } from "hono/cors";
-import { logger } from "hono/logger";
-import todos from "../routes-api/todos";
+export { createApiRouter }
 
-// 创建 Hono 应用实例
-const app = new Hono();
+import { getCookie } from 'hono/cookie'
+import { logger } from '@/api/middleware/logger'
+import { initSupabase } from '@/api/supabase'
+import { createApp } from '@/api/utils'
+import { result } from '@/api/utils/response'
+import { articleRoute } from './article/article.route'
+import { authRoute } from './auth/auth.route'
+import { cacheRoute } from './cache/cache.route'
+import { categoryRoute } from './category/category.route'
+import { friendLinkRoute } from './friend-link/friend-link.route'
+import { healthRouter } from './health/health.route'
+import { metaRoute } from './meta/meta.route'
+import { profileRoute } from './profile/profile.route'
+import { tagRoute } from './tag/tag.route'
+import { uploadRoute } from './upload/upload.route'
 
-// 中间件
-app.use("*", logger());
-app.use("/api/*", cors());
+function createApiRouter() {
 
-// 健康检查
-app.get("/api/health", (c: Context) => {
-	return c.json({
-		status: "ok",
-		timestamp: new Date().toISOString(),
-		service: "ankh-api",
-	});
-});
+  console.log(import.meta.env.SUPABASE_URL);
+  
 
-// 欢迎路由
-app.get("/api/hello", (c: Context) => {
-	const name = c.req.query("name") || "World";
-	return c.json({
-		message: `Hello ${name} from Hono!`,
-		powered_by: "Hono + Cloudflare Workers",
-	});
-});
+  const app = createApp()
 
-// 示例 POST 路由
-app.post("/api/echo", async (c: Context) => {
-	const body = await c.req.json();
-	return c.json({
-		received: body,
-		timestamp: new Date().toISOString(),
-	});
-});
+  // Apply logger for API routes
+  app.use('*', logger)
 
-// 用户相关路由示例
-app.get("/api/users/:id", (c: Context) => {
-	const id = c.req.param("id");
-	return c.json({
-		id,
-		name: `User ${id}`,
-		email: `user${id}@example.com`,
-	});
-});
+  app.use('*', async (c, next) => {
+    const accessToken = getCookie(c, 'access_token')
+    const Authorization = accessToken ? `Bearer ${accessToken}` : ''
+    const supabase = initSupabase({
+      global: {
+        headers: {
+          Authorization,
+        },
+      },
+    })  
+    c.set('supabase', supabase)
+    await next()
+  })
 
-// 挂载 todos 路由
-app.route("/api/todos", todos);
+  // Mount route handlers
+  app.route('/auth', authRoute)
+  app.route('/articles', articleRoute)
+  app.route('/categories', categoryRoute)
+  app.route('/tags', tagRoute)
+  app.route('/meta', metaRoute)
+  app.route('/friend-links', friendLinkRoute)
+  app.route('/profile', profileRoute)
+  app.route('/upload', uploadRoute)
+  app.route('/cache', cacheRoute)
+  app.route('/health', healthRouter)
 
-// 404 处理
-app.notFound((c: Context) => {
-	return c.json({ error: "Not Found", path: c.req.path }, 404);
-});
+  // 404 handler for API routes - must be last
+  app.all('*', (c) => {
+    return result.error(c, `API endpoint not found: ${c.req.method} ${c.req.path}`, 404)
+  })
 
-// 错误处理
-app.onError((err, c: Context) => {
-	console.error(`Error: ${err.message}`);
-	return c.json({ error: err.message }, 500);
-});
+  app.onError((err, c) => {
+    console.error('API Error:', err)
+    return result.error(c, err.message || 'Internal Server Error', 500)
+  })
 
-// 导出 Hono 应用
-export { app };
+  return app
+}
+
+const app = createApp()
+
+const api = createApiRouter()
+
+app.route('/api', api)
+
+export { app }
