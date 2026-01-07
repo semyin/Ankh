@@ -1,6 +1,6 @@
-import { Suspense, useCallback, useState } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query'
+import { createFileRoute } from '@tanstack/react-router'
+import { Suspense, useCallback, useState} from 'react'
 
 export const Route = createFileRoute('/demo/tanstack-query')({
   component: TanStackQueryDemo,
@@ -35,6 +35,14 @@ function TanStackQueryDemo() {
   }, [addTodo, todo])
 
   return (
+    <>
+    {/* <Head> */}
+        <title>{'aaa'}</title>
+        <meta name="description" content={data?.map((t) => t.name).join(', ')} />
+      {/* </Head> */}
+    <header style={{ padding: 16, background: 'black', color: 'white' }}>
+      STATIC HEADER (SSR SYNC)
+    </header>
     <Suspense fallback={<div>Loading...</div>}>
     <div
       className="flex items-center justify-center min-h-screen bg-gradient-to-br from-red-900 via-red-800 to-black p-4 text-white"
@@ -69,6 +77,7 @@ function TanStackQueryDemo() {
             className="w-full px-4 py-3 rounded-lg border border-white/20 bg-white/10 backdrop-blur-sm text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
           />
           <button
+            type="button"
             disabled={todo.trim().length === 0}
             onClick={submitTodo}
             className="bg-blue-500 hover:bg-blue-600 disabled:bg-blue-500/50 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-colors"
@@ -79,5 +88,6 @@ function TanStackQueryDemo() {
       </div>
     </div>
     </Suspense>
+    </>
   )
 }
