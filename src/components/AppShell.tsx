@@ -150,7 +150,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
 			<main
 				id="app"
-				className="flex-grow w-full max-w-5xl mx-auto px-4 py-8 md:py-10"
+				className="flex-grow w-full max-w-5xl mx-auto px-4 py-6 md:py-8"
 			>
 				{children}
 			</main>

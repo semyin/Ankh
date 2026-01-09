@@ -25,8 +25,8 @@ export default function Sidebar() {
 	);
 
 	return (
-		<div className="space-y-6">
-			<div className="bg-white dark:bg-gray-900 p-5 rounded-lg border border-gray-100 dark:border-gray-800">
+		<div className="space-y-4">
+			<div className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
 				<div className="flex flex-col items-center text-center">
 					<div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded-full flex items-center justify-center font-bold text-xl mb-3">
 						{(profile?.author_name ?? profile?.name ?? "D").slice(0, 1)}
@@ -60,7 +60,7 @@ export default function Sidebar() {
 				</div>
 			</div>
 
-			<div className="bg-white dark:bg-gray-900 p-5 rounded-lg border border-gray-100 dark:border-gray-800">
+			<div className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
 				<h4 className="font-bold text-xs mb-3 text-gray-900 dark:text-white uppercase tracking-wider">
 					热门标签
 				</h4>
