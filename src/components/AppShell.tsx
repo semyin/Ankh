@@ -90,6 +90,90 @@ function useReadingProgress(enabled: boolean) {
 	return progress;
 }
 
+function useCodeBlockCopy() {
+	useEffect(() => {
+		const root = document.getElementById("app");
+		if (!root) return;
+
+		const timers = new Map<HTMLButtonElement, number>();
+
+		const setButtonText = (btn: HTMLButtonElement, text: string) => {
+			const original = btn.dataset.label ?? btn.textContent ?? "复制";
+			btn.dataset.label = original;
+			btn.textContent = text;
+		};
+
+		const restoreButtonText = (btn: HTMLButtonElement) => {
+			const original = btn.dataset.label ?? "复制";
+			btn.textContent = original;
+		};
+
+		const writeClipboard = async (text: string) => {
+			if (!text) return;
+			if (navigator.clipboard?.writeText) {
+				await navigator.clipboard.writeText(text);
+				return;
+			}
+
+			const ta = document.createElement("textarea");
+			ta.value = text;
+			ta.style.position = "fixed";
+			ta.style.top = "0";
+			ta.style.left = "0";
+			ta.style.opacity = "0";
+			document.body.appendChild(ta);
+			ta.focus();
+			ta.select();
+			document.execCommand("copy");
+			document.body.removeChild(ta);
+		};
+
+		const onClick = async (e: MouseEvent) => {
+			const target = e.target as HTMLElement | null;
+			const btn = target?.closest<HTMLButtonElement>("[data-code-copy='true']");
+			if (!btn) return;
+
+			const codeEl = btn
+				.closest(".code-block")
+				?.querySelector<HTMLElement>("pre code");
+			const text = codeEl?.textContent ?? "";
+			if (!text) return;
+
+			try {
+				await writeClipboard(text);
+				setButtonText(btn, "已复制");
+
+				const existing = timers.get(btn);
+				if (existing) window.clearTimeout(existing);
+				const id = window.setTimeout(() => {
+					restoreButtonText(btn);
+					timers.delete(btn);
+				}, 1500);
+				timers.set(btn, id);
+			} catch {
+				setButtonText(btn, "复制失败");
+				const existing = timers.get(btn);
+				if (existing) window.clearTimeout(existing);
+				const id = window.setTimeout(() => {
+					restoreButtonText(btn);
+					timers.delete(btn);
+				}, 1500);
+				timers.set(btn, id);
+			}
+		};
+
+		root.addEventListener("click", onClick);
+		return () => {
+			root.removeEventListener("click", onClick);
+			for (const [btn, id] of timers) {
+				window.clearTimeout(id);
+				restoreButtonText(btn);
+			}
+			timers.clear();
+		};
+	}, []);
+}
+
 export default function AppShell({ children }: { children: React.ReactNode }) {
 	const pathname = useRouterState({ select: (s) => s.location.pathname });
 
@@ -102,6 +186,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 		setIsMobileMenuOpen(false);
 		window.scrollTo(0, 0);
 	}, [pathname]);
+
+	useCodeBlockCopy();
 
 	const isArticle = pathname.startsWith("/article/");
 	const readingProgress = useReadingProgress(isArticle);

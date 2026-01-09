@@ -73,9 +73,14 @@ export default function WeatherCard() {
 	const [inputValue, setInputValue] = useState("");
 
 	const controllerRef = useRef<AbortController | null>(null);
+	const isLoadingRef = useRef(false);
 
 	const locationKey = (loc: LocationInfo) =>
 		`${Number(loc.latitude).toFixed(2)},${Number(loc.longitude).toFixed(2)}`;
+
+	useEffect(() => {
+		isLoadingRef.current = isLoading;
+	}, [isLoading]);
 
 	useEffect(() => {
 		const saved = safeJsonParse<LocationInfo>(
@@ -87,6 +92,7 @@ export default function WeatherCard() {
 		}
 		setLocation(saved);
 		setInputValue(saved.name || saved.displayName || "");
+		void loadWeather(saved);
 	}, []);
 
 	const fetchJson = async <T,>(url: string, signal: AbortSignal) => {
@@ -180,6 +186,19 @@ export default function WeatherCard() {
 			setIsLoading(false);
 		}
 	};
+
+	useEffect(() => {
+		if (!location) return;
+
+		const refreshIntervalMs = 5 * 60 * 1000;
+		const id = window.setInterval(() => {
+			if (document.visibilityState !== "visible") return;
+			if (isLoadingRef.current) return;
+			void loadWeather(location, { force: true });
+		}, refreshIntervalMs);
+
+		return () => window.clearInterval(id);
+	}, [location]);
 
 	const resolveCity = async (name: string) => {
 		if (controllerRef.current) controllerRef.current.abort();
