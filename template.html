@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevLog | 极简技术博客</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                fontFamily: {
+                    sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+                    mono: ['JetBrains Mono', 'monospace'],
+                },
+                extend: {
+                    colors: {
+                        primary: { 500: '#3b82f6', 600: '#2563eb' }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Libs -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+
+    <style>
+        /* Base */
+        body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 3px; }
+        .dark ::-webkit-scrollbar-thumb { background-color: #475569; }
+
+        /* Typography */
+        .prose > :first-child { margin-top: 0; }
+        .prose h2 { font-size: 1.5rem; font-weight: 700; margin-top: 2.5rem; margin-bottom: 1.25rem; scroll-margin-top: 6rem; }
+        .prose h3 { font-size: 1.25rem; font-weight: 600; margin-top: 2rem; margin-bottom: 1rem; scroll-margin-top: 6rem; }
+        .prose p { margin-bottom: 1.25rem; line-height: 1.8; color: inherit; }
+        .prose ul, .prose ol { margin: 1.25rem 0; padding-left: 1.25rem; }
+        .prose li { margin: 0.5rem 0; }
+        .prose hr { margin: 2rem 0; border-color: rgba(148, 163, 184, 0.35); }
+        .prose pre { background: #1e293b; padding: 1.25rem; border-radius: 0.5rem; overflow-x: auto; margin-bottom: 1.5rem; border: 1px solid rgba(255,255,255,0.1); }
+        .prose blockquote { border-left: 4px solid #3b82f6; padding-left: 1rem; padding-top: 0.25rem; padding-bottom: 0.25rem; font-style: italic; color: #64748b; background: rgba(59, 130, 246, 0.05); }
+        .dark .prose blockquote { color: #94a3b8; }
+        .prose img { border-radius: 0.5rem; margin: 1.5rem 0; width: 100%; }
+        .prose a { color: #3b82f6; text-decoration: underline; text-underline-offset: 4px; }
+        
+        /* Animation */
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; opacity: 0; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-backdrop { backdrop-filter: blur(4px); background-color: rgba(0,0,0,0.5); }
+
+        /* TOC Active State */
+        .toc-link.active { color: #3b82f6; font-weight: 600; border-left-color: #3b82f6; }
+
+        /* Reading Progress */
+        #reading-progress { transform-origin: 0 0; transform: scaleX(0); }
+    </style>
+</head>
+
+<body class="bg-gray-50 text-slate-800 dark:bg-gray-950 dark:text-slate-200 transition-colors duration-300 min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <header class="sticky top-0 z-40 w-full backdrop-blur-md bg-white/80 dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-800">
+        <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+            <a href="#home" onclick="router.push('home')" class="font-bold text-lg tracking-tight hover:opacity-80 transition-opacity">
+                Dev<span class="text-blue-600">Log</span>
+            </a>
+            <div class="flex items-center gap-6">
+                <nav class="hidden md:flex items-center gap-5 text-sm font-medium text-gray-500 dark:text-gray-400">
+                    <a href="#home" class="nav-item hover:text-black dark:hover:text-white transition-colors">首页</a>
+                    <a href="#categories" class="nav-item hover:text-black dark:hover:text-white transition-colors">分类</a>
+                    <a href="#tags" class="nav-item hover:text-black dark:hover:text-white transition-colors">标签</a>
+                    <a href="#links" class="nav-item hover:text-black dark:hover:text-white transition-colors">友链</a>
+                    <a href="#about" class="nav-item hover:text-black dark:hover:text-white transition-colors">关于</a>
+                </nav>
+                <div class="h-4 w-[1px] bg-gray-300 dark:bg-gray-700 hidden md:block"></div>
+                <div class="flex items-center gap-3">
+                    <button id="search-btn" class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-500">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </button>
+                    <button id="theme-toggle" class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-500">
+                        <svg id="sun-icon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                        <svg id="moon-icon" class="w-5 h-5 block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                    </button>
+                    <button id="mobile-menu-btn" class="md:hidden p-2 rounded-md text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="mobile-menu" class="hidden md:hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 absolute w-full shadow-lg">
+            <div class="px-4 py-2 space-y-1">
+                <a href="#home" class="block px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-800">首页</a>
+                <a href="#categories" class="block px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-800">分类</a>
+                <a href="#tags" class="block px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-800">标签</a>
+                <a href="#about" class="block px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-800">关于</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Reading Progress -->
+    <div id="reading-progress" class="fixed top-0 left-0 z-50 h-0.5 w-full bg-blue-600/80 dark:bg-blue-500/80 pointer-events-none hidden"></div>
+
+    <!-- Search Modal -->
+    <div id="search-modal" class="fixed inset-0 z-50 hidden">
+        <div class="modal-backdrop absolute inset-0 transition-opacity" onclick="searchManager.close()"></div>
+        <div class="relative z-10 max-w-xl mx-auto mt-24 p-4">
+            <div class="bg-white dark:bg-gray-900 rounded-xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700">
+                <div class="flex items-center border-b border-gray-100 dark:border-gray-800 p-4">
+                    <svg class="w-5 h-5 text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    <input id="search-input" type="text" placeholder="搜索文章..." class="w-full bg-transparent outline-none text-gray-900 dark:text-gray-100" autocomplete="off">
+                </div>
+                <div id="search-results" class="max-h-[50vh] overflow-y-auto p-2"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main id="app" class="flex-grow w-full max-w-5xl mx-auto px-4 py-8 md:py-10">
+        <!-- Views Injected Here -->
+    </main>
+
+    <!-- Back to Top Container (Aligned with content) -->
+    <div class="fixed inset-x-0 bottom-0 mx-auto max-w-5xl pointer-events-none z-40 px-4 mb-8">
+        <button id="back-to-top" class="absolute right-4 bottom-0 p-3 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition-all opacity-0 translate-y-10 pointer-events-auto">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
+        </button>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-gray-200 dark:border-gray-800 mt-auto bg-white dark:bg-gray-950">
+        <div class="max-w-5xl mx-auto px-4 py-8 text-center">
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">&copy; 2024 DevLog. Designed with <span class="text-red-500">♥</span> by Frontend Expert.</p>
+            <p class="text-xs text-gray-400">Powered by Single File System</p>
+        </div>
+    </footer>
+
+    <!-- Logic -->
+    <script>
+        // --- 1. CONFIG ---
+        const renderer = new marked.Renderer();
+        const slugify = (value) => String(value ?? '')
+            .trim()
+            .toLowerCase()
+            .replace(/[^\w\u4e00-\u9fa5]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+
+        // Marked v5+ may pass a token object instead of (text, level).
+        renderer.heading = function(textOrToken, levelMaybe) {
+            const isToken = !!textOrToken && typeof textOrToken === 'object';
+            const text = isToken ? (textOrToken.text ?? '') : textOrToken;
+            const level = isToken ? (textOrToken.depth ?? levelMaybe) : levelMaybe;
+            const escapedText = slugify(text);
+            return `<h${level} id="${escapedText}" class="scroll-mt-24">${text}</h${level}>`;
+        };
+        marked.use({ renderer });
+
+        const DB = {
+            categories: [
+                { id: 'tech', name: '技术干货', emoji: '💻', desc: 'Web 前端、架构设计与代码美学' },
+                { id: 'life', name: '生活随笔', emoji: '☕', desc: '咖啡、旅行与日常的碎碎念' },
+                { id: 'reading', name: '书单影评', emoji: '📚', desc: '精神食粮，深度阅读与观影感悟' },
+                { id: 'design', name: 'UI 设计', emoji: '🎨', desc: '像素级的执着，色彩与交互之美' }
+            ],
+            tags: ['JavaScript', 'CSS', 'Vue', 'React', 'Minimalism', 'Coffee', 'Travel', 'Review', 'Photography', 'Indie Hacker'],
+            posts: [
+                {
+                    id: 1,
+                    title: '深入理解 CSS Grid 布局',
+                    summary: '二维布局的终极解决方案，从基础概念到实战。',
+                    date: '2024-03-15',
+                    categoryId: 'tech',
+                    tags: ['CSS', 'Minimalism'],
+                    content: '## 为什么选择 Grid?\n\n在 CSS Grid 出现之前，我们一直在用 Hack 的方式做布局。从 `table` 到 `float`，再到 `flex`，虽然 Flexbox 解决了一维布局的痛点，但面对复杂的二维网格，Grid 才是王者。'
+                        + '\n\n### 核心概念\n\n1. **Container**: 容器\n2. **Item**: 项目\n3. **Track**: 行或列\n\n```css\n.container {\n  display: grid;\n  grid-template-columns: repeat(3, 1fr);\n  gap: 20px;\n}\n```\n\n> Grid 让我们能够用代码描述平面设计的网格系统，这是 Web 设计的一大飞跃。'
+                        + '\n\n## 从 Flex 到 Grid：如何选择？\n\n一个实用的判断标准：\n\n- **一维**（只需要在一条轴上排布）：优先用 Flex。\n- **二维**（同时需要控制行和列）：Grid 会更“对味”。\n- **复杂响应式卡片墙**：Grid 的 `auto-fit/auto-fill + minmax()` 很省心。\n\nFlex 也能做二维，但你会写出很多“套娃”的容器；Grid 则更像是在描述一个“网格系统”，表达力更强。'
+                        + '\n\n## 先把网格画出来：列、行与间距\n\n`grid-template-columns` / `grid-template-rows` 决定了网格的骨架。\n\n```css\n.grid {\n  display: grid;\n  grid-template-columns: 200px 1fr 200px;\n  grid-template-rows: auto 1fr auto;\n  gap: 16px;\n}\n```\n\n当你看到“左侧固定 + 中间自适应 + 右侧固定”这类需求，Grid 基本就是标准答案。'
+                        + '\n\n## 命名区域：Grid Template Areas\n\n当布局更像拼图时，可以用 `grid-template-areas` 提升可读性。\n\n```css\n.layout {\n  display: grid;\n  grid-template-columns: 240px 1fr;\n  grid-template-rows: auto 1fr;\n  grid-template-areas:\n    \"header header\"\n    \"sidebar main\";\n  gap: 16px;\n}\n.header { grid-area: header; }\n.sidebar { grid-area: sidebar; }\n.main { grid-area: main; }\n```\n\n读代码就像读设计稿：一眼知道页面被分成了哪些区域。'
+                        + '\n\n### 经典三栏（圣杯/双飞翼的现代写法）\n\n```css\n.page {\n  display: grid;\n  grid-template-columns: 260px minmax(0, 1fr) 220px;\n  gap: 20px;\n}\n```\n\n`minmax(0, 1fr)` 是个小技巧：避免中间栏内容过长导致布局溢出。'
+                        + '\n\n### 响应式卡片墙：auto-fit + minmax\n\n```css\n.cards {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));\n  gap: 16px;\n}\n```\n\n这几行能覆盖大部分“卡片列表 + 自适应列数”的业务页面。'
+                        + '\n\n## 对齐：别再用 margin 魔法了\n\nGrid 提供两套对齐系统：\n\n- **网格整体在容器中怎么摆**：`justify-content` / `align-content`\n- **网格项在网格单元里怎么摆**：`justify-items` / `align-items`（以及单项的 `justify-self` / `align-self`）\n\n当你需要“整体居中但单项左对齐”，或“某个卡片右下角对齐”时，这套 API 会非常顺手。'
+                        + '\n\n## 自动放置：grid-auto-flow\n\n```css\n.masonryLike {\n  display: grid;\n  grid-auto-flow: row dense;\n  grid-template-columns: repeat(6, 1fr);\n  gap: 12px;\n}\n```\n\n`dense` 会尝试填补空洞，但也可能打乱视觉顺序；用之前先确认你的内容顺序是否敏感。'
+                        + '\n\n## 调试技巧：用 DevTools 读网格\n\nChrome/Edge 的 DevTools 对 Grid 非常友好：\n\n- 打开元素面板，勾选 Grid overlay，可以直观看到网格线和区域。\n- 先调好 `gap`，再调列宽（固定/自适应），最后再处理对齐。\n\n不要一上来就写一堆 `grid-column`，先把“底图”画稳，后面的定位会轻松很多。'
+                        + '\n\n## 小结\n\n如果说 Flex 是“排队”，那 Grid 更像“排座位”。当页面的布局意图是二维结构时，Grid 会让你的代码更短、更清晰、更不容易崩。'
+                },
+                { id: 2, title: '为什么我放弃了 React 转投 Vue', summary: 'Vue 3 Composition API 带来的开发体验提升。', date: '2024-02-28', categoryId: 'tech', tags: ['Vue', 'React', 'JavaScript'], content: '## 这是一个艰难的决定\n\nReact 的生态毋庸置疑是强大的。Hooks 的设计思想也非常超前。但是，**Vue 3 的 Composition API 结合 Script Setup** 给我带来了久违的爽快感。\n\n### 响应式系统的差异\n\nReact 的 `useEffect` 依赖数组有时是个心智负担，而 Vue 的自动依赖追踪（Auto-tracking）让代码逻辑更加直观。\n\n```javascript\n// Vue 3\nconst count = ref(0);\nconst double = computed(() => count.value * 2);\n```\n\n当然，工具没有优劣之分，只有适合与否。' },
+                { id: 3, title: '2023 年度总结：在不确定中寻找秩序', summary: '这一年经历了裁员、独立开发、长途旅行。回顾这一年，我学到了什么？关于生活、技术和心态。', date: '2023-12-31', categoryId: 'life', tags: ['Indie Hacker', 'Review'], content: '## 拥抱变化\n\n2023 年是动荡的一年。AI 的爆发让很多程序员感到焦虑。但我认为，**唯一不变的就是变化**。\n\n### 关键数据\n- 写了 50 篇博客\n- 发布了 2 个独立产品\n- 阅读了 20 本书\n\n> "种一棵树最好的时间是十年前，其次是现在。" \n\n明年，继续前行。' },
+                { id: 4, title: '东京旅行游记：涩谷的夜与镰仓的海', summary: '一场说走就走的旅行。从繁华的都市到静谧的海边，用镜头记录下日本独特的街头美学。', date: '2023-11-12', categoryId: 'life', tags: ['Travel', 'Photography', 'Japan'], content: '## 涩谷十字路口\n\n当绿灯亮起，成千上万的人潮涌动，那一刻仿佛置身于电影场景之中。霓虹灯闪烁，展示着这个城市的活力。\n\n![Tokyo](https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&q=80&w=1000)\n\n### 镰仓高校前\n\n乘坐江之电，看着海平面的落日，耳边仿佛响起了灌篮高手的 BGM。那是青春的味道。' },
+                { id: 5, title: '《黑客与画家》读后感', summary: '保罗·格雷厄姆的经典之作。编程不仅仅是工程，更是一种艺术创作。为什么黑客也是画家？', date: '2023-09-20', categoryId: 'reading', tags: ['Review', 'Indie Hacker'], content: '## 创造者的共性\n\n书中提出一个有趣的观点：**黑客（Hacker）与画家（Painter）都是创造者**。我们都是从零开始，在一张白纸（或空文件）上构建世界。\n\n> 好的设计是简单的设计。\n\n这点对于 UI 设计和代码架构同样适用。我们要追求的不仅仅是功能实现，还有代码的美感和简洁。' },
+                { id: 6, title: '我的咖啡冲煮指南', summary: '从手冲到意式，如何在家制作一杯完美的咖啡？分享我的设备清单和参数调整心得。', date: '2024-01-10', categoryId: 'life', tags: ['Coffee', 'Life'], content: '## 每日仪式感\n\n早起的一杯咖啡，是我开启一天的开关。\n\n### 手冲参数\n- **粉水比**: 1:15\n- **水温**: 92度\n- **研磨度**: 中细研磨\n\n享受水流与咖啡粉接触那一刻的香气爆发，这是一种冥想。' },
+                { id: 7, title: '极简 UI 设计原则：少即是多', summary: '如何运用留白、排版和色彩来提升产品的质感？给程序员的 UI 设计入门课。', date: '2023-08-05', categoryId: 'design', tags: ['UI', 'Minimalism', 'CSS'], content: '## Less is More\n\n**留白（Whitespace）**不是浪费空间，它是设计呼吸的窗口。\n\n1. **层级**: 通过字体大小和粗细区分重点。\n2. **对齐**: 像素级的对齐能带来秩序感。\n3. **色彩**: 全局不超过三种主色。\n\n不要害怕空白，它是高级感的来源。' },
+                { id: 8, title: 'React Hooks 最佳实践', summary: '避免闭包陷阱，优化渲染性能。深入探讨 useCallback 和 useMemo 的正确使用场景。', date: '2024-01-25', categoryId: 'tech', tags: ['React', 'JavaScript'], content: '## 依赖数组的谎言\n\n很多 bug 都源于 `useEffect` 的依赖项没有写全。使用 ESLint 插件是必须的。\n\n### 自定义 Hooks\n\n将逻辑抽离成 `useUser` 或 `useWindowSize`，可以让组件代码保持干净纯粹。\n\n```jsx\nconst { data, loading } = useFetch("/api/data");\nif (loading) return <Spinner />;\n```\n' }
+            ],
+            friends: [
+                { name: 'Evan You', avatar: 'EY', desc: 'Creator of Vue.js', url: '#' },
+                { name: 'Dan Abramov', avatar: 'DA', desc: 'React Core Team', url: '#' },
+                { name: 'Anthony Fu', avatar: 'AF', desc: 'Vue/Vite Core Team', url: '#' },
+                { name: 'Lee Robinson', avatar: 'LR', desc: 'VP at Vercel', url: '#' },
+                { name: 'Josh Comeau', avatar: 'JC', desc: 'CSS Wizard', url: '#' },
+                { name: 'Sarah Drasner', avatar: 'SD', desc: 'Engineering Manager', url: '#' },
+                { name: 'Addy Osmani', avatar: 'AO', desc: 'Chrome Engineering', url: '#' },
+                { name: 'Sindre Sorhus', avatar: 'SS', desc: 'Open Source Legend', url: '#' }
+            ],
+            aboutContent: `## 你好，我是 DevExpert 👋\n\n一名追求完美的前端工程师。我相信代码如诗，设计如画。\n\n### 🛠 技术栈\n\n- **Core**: JavaScript (ES6+), TypeScript, HTML5, CSS3\n- **Frameworks**: Vue 3, React, Next.js, Tailwind CSS\n- **Tools**: VS Code, Figma, Docker, Git\n\n### 📮 联系我\n\n- **Email**: hi@devexpert.com\n- **Github**: @devexpert\n\n> "Stay hungry, stay foolish."`
+        };
+
+        // --- 2. COMPONENTS ---
+        const formatDate = (d) => new Date(d).toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' });
+        const getParams = () => Object.fromEntries(new URLSearchParams(window.location.hash.split('?')[1]));
+        const estimateReadingTime = (text) => Math.ceil(text.length / 400); 
+
+        // 修复：确保 PostCard 整个卡片可点击，且 onclick 调用是全局 router
+        const PostCard = (post) => {
+            const cat = DB.categories.find(c => c.id === post.categoryId);
+            return `
+                <article onclick="router.push('article?id=${post.id}')" 
+                    class="group bg-white dark:bg-gray-900 rounded-lg p-5 border border-gray-100 dark:border-gray-800 hover:border-blue-200 dark:hover:border-blue-800 hover:shadow-md transition-all cursor-pointer mb-4">
+                    <div class="flex items-center gap-2 mb-2 text-xs text-gray-500 dark:text-gray-400">
+                        <span class="text-blue-600 dark:text-blue-400 font-medium">${cat.emoji} ${cat.name}</span>
+                        <span>•</span>
+                        <time>${formatDate(post.date)}</time>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">${post.title}</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed">${post.summary}</p>
+                </article>
+            `;
+        };
+
+        const Sidebar = () => `
+            <div class="space-y-6">
+                <!-- Profile -->
+                <div class="bg-white dark:bg-gray-900 p-5 rounded-lg border border-gray-100 dark:border-gray-800">
+                    <div class="flex flex-col items-center text-center">
+                        <div class="w-16 h-16 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded-full flex items-center justify-center font-bold text-xl mb-3">D</div>
+                        <h3 class="font-bold text-gray-900 dark:text-white">DevExpert</h3>
+                        <p class="text-xs text-gray-500 mb-4">Frontend Developer</p>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">追求极致用户体验，分享技术与生活。</p>
+                        <div class="flex gap-2 w-full">
+                            <a href="#about" class="flex-1 py-1.5 text-xs font-medium bg-gray-50 dark:bg-gray-800 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">关于我</a>
+                            <a href="https://github.com/devexpert" target="_blank" rel="noopener noreferrer" class="flex-1 py-1.5 text-xs font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">Github</a>
+                        </div>
+                    </div>
+                </div>
+                <!-- Tags -->
+                <div class="bg-white dark:bg-gray-900 p-5 rounded-lg border border-gray-100 dark:border-gray-800">
+                    <h4 class="font-bold text-xs mb-3 text-gray-900 dark:text-white uppercase tracking-wider">热门标签</h4>
+                    <div class="flex flex-wrap gap-2">
+                        ${DB.tags.slice(0, 8).map(t => `<button onclick="router.push('tags?name=${t}')" class="text-xs px-2 py-1 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded transition-colors">#${t}</button>`).join('')}
+                    </div>
+                </div>
+                <!-- Realtime -->
+                <div class="bg-white dark:bg-gray-900 p-5 rounded-lg border border-gray-100 dark:border-gray-800">
+                    <div class="flex items-center justify-between">
+                        <h4 class="font-bold text-xs text-gray-900 dark:text-white uppercase tracking-wider">实时信息</h4>
+                        <span id="realtime-tz" class="text-[10px] text-gray-400"></span>
+                    </div>
+                    <div class="mt-3">
+                        <div id="realtime-time" class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">--:--:--</div>
+                        <div id="realtime-date" class="mt-1 text-xs text-gray-500 dark:text-gray-400">----</div>
+                    </div>
+                </div>
+                <!-- Weather -->
+                <div class="bg-white dark:bg-gray-900 p-5 rounded-lg border border-gray-100 dark:border-gray-800">
+                    <div class="flex items-center justify-between gap-3">
+                        <h4 class="font-bold text-xs text-gray-900 dark:text-white uppercase tracking-wider">天气</h4>
+                        <button id="weather-refresh" class="text-[10px] px-2 py-1 rounded bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-300 transition-colors">刷新</button>
+                    </div>
+                    <div class="mt-3 flex gap-2">
+                        <input id="weather-city-input" type="text" placeholder="输入城市，如 北京" class="flex-1 text-xs px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950/40 outline-none focus:ring-2 focus:ring-blue-500/30">
+                        <button id="weather-search" class="text-xs px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors">查询</button>
+                    </div>
+                    <div class="mt-4 flex items-start justify-between gap-3">
+                        <div>
+                            <div id="weather-location" class="text-xs font-medium text-gray-900 dark:text-white">—</div>
+                            <div id="weather-desc" class="mt-1 text-xs text-gray-500 dark:text-gray-400">—</div>
+                            <div id="weather-meta" class="mt-1 text-[10px] text-gray-400">—</div>
+                        </div>
+                        <div id="weather-temp" class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">--°</div>
+                    </div>
+                    <div id="weather-status" class="mt-3 text-[10px] text-gray-400">可查询城市天气；定位需在 http://localhost 或 https 环境</div>
+                    <div class="mt-3">
+                        <button id="weather-geolocate" class="w-full text-xs px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">使用定位</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // --- 3. VIEWS ---
+        const Views = {
+            home: () => {
+                const posts = [...DB.posts].sort((a,b) => new Date(b.date) - new Date(a.date));
+                // 修复：布局调整 2:1 (col-span-2 vs col-span-1)，gap-6，对齐顶部
+                return `
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 fade-in items-start">
+                        <div class="md:col-span-2 space-y-4">
+                            ${posts.map(PostCard).join('')}
+                        </div>
+                        <div class="hidden md:block md:col-span-1 sticky top-24">
+                            ${Sidebar()}
+                        </div>
+                    </div>
+                `;
+            },
+
+            categories: () => {
+                const currentId = getParams().id;
+                const gridHtml = `
+                    <div class="text-center mb-8 fade-in">
+                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">文章分类</h1>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm">探索技术与生活的不同维度</p>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10 fade-in">
+                        ${DB.categories.map(cat => {
+                            const isActive = currentId === cat.id;
+                            const activeClass = isActive
+                                ? 'bg-blue-50 text-gray-900 border-blue-300 ring-1 ring-blue-200 ring-offset-2 ring-offset-gray-50 dark:ring-offset-gray-950 dark:bg-blue-900/20 dark:text-white dark:border-blue-700'
+                                : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md';
+                            const count = DB.posts.filter(p => p.categoryId === cat.id).length;
+                            return `
+                                <div onclick="router.push('categories?id=${cat.id}')" 
+                                     class="${activeClass} p-4 rounded-lg border cursor-pointer transition-all duration-200 flex flex-col items-center text-center justify-center min-h-[140px] group">
+                                    <div class="text-3xl mb-2">${cat.emoji}</div>
+                                    <div class="font-bold text-sm mb-1">${cat.name}</div>
+                                    <div class="text-xs opacity-70 mb-2 line-clamp-1">${cat.desc}</div>
+                                    <div class="text-xs font-mono opacity-50 bg-black/5 dark:bg-white/10 px-2 py-0.5 rounded-full">${count} 篇文章</div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+                let listHtml = '';
+                if (currentId) {
+                    const filtered = DB.posts.filter(p => p.categoryId === currentId);
+                    listHtml = `<div class="fade-in border-t border-gray-100 dark:border-gray-800 pt-8">
+                        <div class="text-sm text-gray-400 mb-6">相关文章</div>
+                        ${filtered.length ? filtered.map(PostCard).join('') : '<div class="text-center py-10">暂无文章</div>'}
+                    </div>`;
+                }
+                return gridHtml + listHtml;
+            },
+
+            tags: () => {
+                const currentTag = getParams().name;
+                const cloudHtml = `
+                    <div class="text-center mb-8 fade-in">
+                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">标签云</h1>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm">通过关键词连接碎片化的思考</p>
+                    </div>
+                    <div class="flex flex-wrap justify-center gap-2 mb-10 mx-auto fade-in">
+                        ${DB.tags.map(tag => {
+                            const isActive = currentTag === tag;
+                            const activeClass = isActive
+                                ? 'bg-blue-50 text-blue-700 border-blue-300 shadow-sm scale-105 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-700'
+                                : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:border-blue-400 dark:hover:border-blue-700 hover:text-blue-500';
+                            return `<button onclick="router.push('tags?name=${tag}')" class="${activeClass} px-4 py-2 rounded-lg border text-sm font-medium transition-all">${tag}</button>`;
+                        }).join('')}
+                    </div>
+                `;
+                let listHtml = '';
+                if (currentTag) {
+                    const filtered = DB.posts.filter(p => p.tags.includes(currentTag));
+                    listHtml = `<div class="fade-in border-t border-gray-100 dark:border-gray-800 pt-8">
+                        <div class="text-sm text-gray-400 mb-6">包含 <span class="text-blue-500 font-bold">#${currentTag}</span> 的文章</div>
+                        ${filtered.length ? filtered.map(PostCard).join('') : '<div class="text-center py-10">暂无文章</div>'}
+                    </div>`;
+                }
+                return cloudHtml + listHtml;
+            },
+
+            links: () => `
+                <div class="text-center mb-10 fade-in">
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">友情链接</h1>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 fade-in">
+                    ${DB.friends.map(f => `
+                        <a href="${f.url}" class="block bg-white dark:bg-gray-900 p-6 rounded-lg border border-gray-200 dark:border-gray-800 hover:border-blue-400 hover:-translate-y-1 transition-all text-center group">
+                            <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xs font-bold">${f.avatar}</div>
+                            <div class="font-bold text-sm text-gray-900 dark:text-white mb-1">${f.name}</div>
+                            <div class="text-xs text-gray-400 truncate">${f.desc}</div>
+                        </a>
+                    `).join('')}
+                </div>
+            `,
+
+            about: () => {
+                const postCount = DB.posts.length;
+                const categoryCount = DB.categories.length;
+                const tagCount = DB.tags.length;
+                const latest = [...DB.posts].sort((a,b) => new Date(b.date) - new Date(a.date))[0];
+
+                return `
+                    <div class="space-y-6 fade-in">
+                        <section class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6 sm:p-10">
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-6">
+                                <div class="mx-auto sm:mx-0 w-20 h-20 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded-full flex items-center justify-center font-bold text-2xl">D</div>
+                                <div class="flex-1 text-center sm:text-left">
+                                    <div class="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-500">About</div>
+                                    <h1 class="text-3xl font-bold mt-2 text-gray-900 dark:text-white">关于</h1>
+                                    <p class="mt-3 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">这里是个人介绍与站点信息页。你可以在下方用 Markdown 维护更完整的自我介绍、技术栈与联系方式。</p>
+                                    <div class="mt-4 flex flex-wrap gap-2 justify-center sm:justify-start">
+                                        <a href="mailto:hi@devexpert.com" class="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm font-medium transition-colors">邮箱联系</a>
+                                        <a href="https://github.com/devexpert" target="_blank" rel="noopener noreferrer" class="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm font-medium transition-colors">GitHub</a>
+                                        <a href="#home" onclick="router.push('home')" class="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm font-medium transition-colors">返回首页</a>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-3 gap-3 text-center w-full sm:w-auto">
+                                    <div class="rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/40 px-4 py-3">
+                                        <div class="text-lg font-bold text-gray-900 dark:text-white">${postCount}</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400">文章</div>
+                                    </div>
+                                    <div class="rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/40 px-4 py-3">
+                                        <div class="text-lg font-bold text-gray-900 dark:text-white">${categoryCount}</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400">分类</div>
+                                    </div>
+                                    <div class="rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/40 px-4 py-3">
+                                        <div class="text-lg font-bold text-gray-900 dark:text-white">${tagCount}</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400">标签</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                            <aside class="lg:col-span-4 space-y-6">
+                                <div class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+                                    <h3 class="font-bold text-sm text-gray-900 dark:text-white uppercase tracking-wider">站点信息</h3>
+                                    <div class="mt-4 space-y-3 text-sm text-gray-600 dark:text-gray-400">
+                                        <div class="flex items-center justify-between gap-3">
+                                            <span class="text-gray-500 dark:text-gray-500">最新文章</span>
+                                            <span class="font-medium text-gray-900 dark:text-gray-200 text-right">${latest ? latest.title : '—'}</span>
+                                        </div>
+                                        <div class="flex items-center justify-between gap-3">
+                                            <span class="text-gray-500 dark:text-gray-500">更新日期</span>
+                                            <span class="font-medium text-gray-900 dark:text-gray-200">${latest ? formatDate(latest.date) : '—'}</span>
+                                        </div>
+                                    </div>
+                                    ${latest ? `<button onclick="router.push('article?id=${latest.id}')" class="mt-4 w-full px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors">阅读最新文章</button>` : ''}
+                                </div>
+
+                                <div class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+                                    <h3 class="font-bold text-sm text-gray-900 dark:text-white uppercase tracking-wider">快速导航</h3>
+                                    <div class="mt-4 grid grid-cols-2 gap-2">
+                                        <button onclick="router.push('home')" class="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm transition-colors">首页</button>
+                                        <button onclick="router.push('categories')" class="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm transition-colors">分类</button>
+                                        <button onclick="router.push('tags')" class="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm transition-colors">标签</button>
+                                        <button onclick="router.push('links')" class="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm transition-colors">友链</button>
+                                    </div>
+                                </div>
+                            </aside>
+
+                            <div class="lg:col-span-8">
+                                <div class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6 sm:p-10">
+                                    <div class="prose dark:prose-invert max-w-none text-base sm:text-lg">
+                                        ${marked.parse(DB.aboutContent)}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            article: () => {
+                const id = getParams().id;
+                const post = DB.posts.find(p => p.id == id);
+                if (!post) return `<div class="text-center py-20">文章未找到</div>`;
+                
+                const toc = [];
+                const lines = post.content.split('\n');
+                lines.forEach(line => {
+                    const h2 = line.match(/^##\s+(.*)/);
+                    const h3 = line.match(/^###\s+(.*)/);
+                    if (h2) toc.push({ text: h2[1], level: 2, id: slugify(h2[1]) });
+                    if (h3) toc.push({ text: h3[1], level: 3, id: slugify(h3[1]) });
+                });
+
+                const readTime = estimateReadingTime(post.content);
+                const orderedPosts = [...DB.posts].sort((a, b) => new Date(a.date) - new Date(b.date));
+                const currentIndex = orderedPosts.findIndex(p => p.id == post.id);
+                const prevPost = currentIndex > 0 ? orderedPosts[currentIndex - 1] : null;
+                const nextPost = currentIndex >= 0 && currentIndex < orderedPosts.length - 1 ? orderedPosts[currentIndex + 1] : null;
+
+                return `
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 relative fade-in">
+                        <!-- Content -->
+                        <article id="article-root" class="lg:col-span-9">
+                            <div class="bg-white dark:bg-gray-900 p-6 sm:p-10 rounded-lg border border-gray-200 dark:border-gray-800">
+                            <header class="mb-8 text-center">
+                                <h1 class="text-3xl font-bold mb-4 text-gray-900 dark:text-white leading-tight">${post.title}</h1>
+                                <div class="flex flex-wrap items-center justify-center gap-4 text-sm text-gray-500 dark:text-gray-400 mb-4">
+                                    <span>📅 ${formatDate(post.date)}</span>
+                                    <span>⏱️ 约 ${readTime} 分钟阅读</span>
+                                </div>
+                                <div class="flex flex-wrap justify-center gap-2">
+                                    ${post.tags.map(t => `<span onclick="router.push('tags?name=${t}')" class="cursor-pointer px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full text-xs hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 transition-colors"># ${t}</span>`).join('')}
+                                </div>
+                            </header>
+                            <div class="prose dark:prose-invert max-w-none border-t border-gray-100 dark:border-gray-800 pt-8">
+                                ${marked.parse(post.content)}
+                            </div>
+                            <nav class="mt-10 pt-8 border-t border-gray-100 dark:border-gray-800 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                ${prevPost ? `
+                                    <button onclick="router.push('article?id=${prevPost.id}')" class="group text-left p-4 rounded-lg border border-gray-200 dark:border-gray-800 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                        <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">上一篇</div>
+                                        <div class="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 line-clamp-2">${prevPost.title}</div>
+                                    </button>
+                                ` : `<div></div>`}
+                                ${nextPost ? `
+                                    <button onclick="router.push('article?id=${nextPost.id}')" class="group text-right p-4 rounded-lg border border-gray-200 dark:border-gray-800 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                        <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">下一篇</div>
+                                        <div class="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 line-clamp-2">${nextPost.title}</div>
+                                    </button>
+                                ` : `<div></div>`}
+                            </nav>
+                            </div>
+                        </article>
+                        
+                        <!-- TOC Sidebar -->
+                        <aside class="hidden lg:block lg:col-span-3">
+                            <div class="sticky top-24">
+                                <h4 class="font-bold text-sm text-gray-900 dark:text-white mb-4 uppercase tracking-wider pl-4">目录</h4>
+                                <nav id="toc" class="space-y-1 border-l border-gray-200 dark:border-gray-800">
+                                    ${toc.map(item => `
+                                        <a href="#${item.id}" onclick="event.preventDefault(); document.getElementById('${item.id}')?.scrollIntoView({ behavior: 'smooth', block: 'start' });" class="toc-link block text-xs py-1.5 hover:text-blue-500 transition-colors border-l-2 border-transparent pl-4 ${item.level === 3 ? 'ml-2 text-gray-400' : 'text-gray-500 dark:text-gray-400'}" data-id="${item.id}">
+                                            ${item.text}
+                                        </a>
+                                    `).join('')}
+                                </nav>
+                            </div>
+                        </aside>
+                    </div>
+                `;
+            }
+        };
+
+        // --- 4. CORE LOGIC ---
+        const viewCleanupManager = (() => {
+            let cleanups = [];
+            return {
+                add(fn) {
+                    if (typeof fn === 'function') cleanups.push(fn);
+                },
+                runAll() {
+                    cleanups.forEach(fn => {
+                        try { fn(); } catch (e) {}
+                    });
+                    cleanups = [];
+                }
+            };
+        })();
+
+        const router = {
+            init() {
+                window.addEventListener('hashchange', () => this.render());
+                window.addEventListener('load', () => this.render());
+            },
+            render() {
+                const rawHash = window.location.hash.split('?')[0] || '#home';
+                const viewName = rawHash.slice(1);
+                viewCleanupManager.runAll();
+                
+                document.querySelectorAll('.nav-item').forEach(el => {
+                    const href = el.getAttribute('href');
+                    if (href === rawHash) el.classList.add('text-black', 'dark:text-white', 'font-bold');
+                    else el.classList.remove('text-black', 'dark:text-white', 'font-bold');
+                });
+
+                window.scrollTo(0,0);
+                
+                // 修复：如果 viewName 存在则渲染，否则回退到 home
+                if (Views[viewName]) {
+                    document.getElementById('app').innerHTML = Views[viewName]();
+                } else {
+                    document.getElementById('app').innerHTML = Views.home();
+                }
+
+                setTimeout(() => {
+                    if (viewName === 'article') {
+                        if (window.hljs) hljs.highlightAll();
+                        viewCleanupManager.add(initTOC());
+                        viewCleanupManager.add(initReadingProgress());
+                    }
+                    if (viewName === 'home') {
+                        viewCleanupManager.add(initRealtimeCard());
+                        viewCleanupManager.add(initWeatherCard());
+                    }
+                }, 0);
+            },
+            push(path) { window.location.hash = path; }
+        };
+
+        const searchManager = {
+            init() {
+                const modal = document.getElementById('search-modal');
+                const btn = document.getElementById('search-btn');
+                const input = document.getElementById('search-input');
+                const results = document.getElementById('search-results');
+                btn.onclick = () => { modal.classList.remove('hidden'); input.focus(); };
+                document.addEventListener('keydown', (e) => { if (e.key === 'Escape') this.close(); });
+                input.addEventListener('input', (e) => {
+                    const q = e.target.value.toLowerCase().trim();
+                    if (!q) { results.innerHTML = ''; return; }
+                    const matches = DB.posts.filter(p => p.title.toLowerCase().includes(q) || p.summary.toLowerCase().includes(q));
+                    results.innerHTML = matches.length ? matches.map(p => `
+                        <div onclick="router.push('article?id=${p.id}'); searchManager.close()" class="p-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded cursor-pointer border-b border-gray-50 dark:border-gray-800 last:border-0">
+                            <div class="text-sm font-bold text-gray-800 dark:text-gray-200">${p.title}</div>
+                        </div>`).join('') : '<div class="text-center py-4 text-gray-400 text-xs">无结果</div>';
+                });
+            },
+            close() { document.getElementById('search-modal').classList.add('hidden'); document.getElementById('search-input').value = ''; }
+        };
+
+        function initTOC() {
+            const toc = document.getElementById('toc');
+            if (!toc) return null;
+
+            const links = Array.from(toc.querySelectorAll('.toc-link'));
+            if (!links.length) return null;
+
+            const linkById = new Map(links.map(l => [l.dataset.id, l]));
+            const headings = Array.from(document.querySelectorAll('.prose h2, .prose h3'))
+                .filter(h => h.id && linkById.has(h.id));
+            if (!headings.length) return null;
+
+            let activeId = null;
+            const setActive = (id) => {
+                if (!id || id === activeId) return;
+                activeId = id;
+                links.forEach(link => link.classList.toggle('active', link.dataset.id === id));
+            };
+
+            const topOffset = 96;
+            const computeActiveId = () => {
+                let currentId = headings[0].id;
+                for (const heading of headings) {
+                    if (heading.getBoundingClientRect().top <= topOffset) currentId = heading.id;
+                    else break;
+                }
+                return currentId;
+            };
+
+            let rafId = 0;
+            const onScroll = () => {
+                if (rafId) return;
+                rafId = requestAnimationFrame(() => {
+                    rafId = 0;
+                    setActive(computeActiveId());
+                });
+            };
+
+            setActive(computeActiveId());
+            window.addEventListener('scroll', onScroll, { passive: true });
+            window.addEventListener('resize', onScroll);
+
+            return () => {
+                window.removeEventListener('scroll', onScroll);
+                window.removeEventListener('resize', onScroll);
+                if (rafId) cancelAnimationFrame(rafId);
+            };
+        }
+
+        function initReadingProgress() {
+            const bar = document.getElementById('reading-progress');
+            if (!bar) return null;
+
+            bar.classList.remove('hidden');
+
+            const article = document.getElementById('article-root');
+            if (!article) {
+                bar.classList.add('hidden');
+                return null;
+            }
+
+            const update = () => {
+                const scrollY = window.scrollY || window.pageYOffset || 0;
+                const start = article.getBoundingClientRect().top + scrollY;
+                const end = start + article.scrollHeight - window.innerHeight;
+                const raw = end > start ? (scrollY - start) / (end - start) : 0;
+                const progress = Math.max(0, Math.min(1, raw));
+                bar.style.transform = `scaleX(${progress})`;
+            };
+
+            let rafId = 0;
+            const onScroll = () => {
+                if (rafId) return;
+                rafId = requestAnimationFrame(() => {
+                    rafId = 0;
+                    update();
+                });
+            };
+
+            update();
+            window.addEventListener('scroll', onScroll, { passive: true });
+            window.addEventListener('resize', onScroll);
+
+            return () => {
+                window.removeEventListener('scroll', onScroll);
+                window.removeEventListener('resize', onScroll);
+                if (rafId) cancelAnimationFrame(rafId);
+                bar.style.transform = 'scaleX(0)';
+                bar.classList.add('hidden');
+            };
+        }
+
+        function initRealtimeCard() {
+            const timeEl = document.getElementById('realtime-time');
+            const dateEl = document.getElementById('realtime-date');
+            const tzEl = document.getElementById('realtime-tz');
+            if (!timeEl || !dateEl) return null;
+
+            const pad2 = (n) => String(n).padStart(2, '0');
+            const offsetMin = -new Date().getTimezoneOffset();
+            const sign = offsetMin >= 0 ? '+' : '-';
+            const offsetAbs = Math.abs(offsetMin);
+            const offsetStr = `UTC${sign}${pad2(Math.floor(offsetAbs / 60))}:${pad2(offsetAbs % 60)}`;
+            const tzName = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+            if (tzEl) tzEl.textContent = tzName ? `${tzName} · ${offsetStr}` : offsetStr;
+
+            const timeFmt = new Intl.DateTimeFormat('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+            const dateFmt = new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short' });
+
+            const update = () => {
+                const now = new Date();
+                timeEl.textContent = timeFmt.format(now);
+                dateEl.textContent = dateFmt.format(now);
+            };
+
+            update();
+            const intervalId = window.setInterval(update, 1000);
+            return () => window.clearInterval(intervalId);
+        }
+
+        function initWeatherCard() {
+            const input = document.getElementById('weather-city-input');
+            const searchBtn = document.getElementById('weather-search');
+            const refreshBtn = document.getElementById('weather-refresh');
+            const geoBtn = document.getElementById('weather-geolocate');
+            const locationEl = document.getElementById('weather-location');
+            const descEl = document.getElementById('weather-desc');
+            const metaEl = document.getElementById('weather-meta');
+            const tempEl = document.getElementById('weather-temp');
+            const statusEl = document.getElementById('weather-status');
+
+            if (!input || !searchBtn || !refreshBtn || !geoBtn || !locationEl || !descEl || !metaEl || !tempEl || !statusEl) return null;
+
+            const setStatus = (text) => { statusEl.textContent = text; };
+            const setLoading = (isLoading) => {
+                searchBtn.disabled = isLoading;
+                refreshBtn.disabled = isLoading;
+                geoBtn.disabled = isLoading;
+                searchBtn.classList.toggle('opacity-60', isLoading);
+                refreshBtn.classList.toggle('opacity-60', isLoading);
+                geoBtn.classList.toggle('opacity-60', isLoading);
+            };
+
+            const weatherCodeText = (code) => {
+                const map = {
+                    0: '晴',
+                    1: '大部晴朗',
+                    2: '多云',
+                    3: '阴',
+                    45: '雾',
+                    48: '雾（沉积）',
+                    51: '毛毛雨（小）',
+                    53: '毛毛雨（中）',
+                    55: '毛毛雨（大）',
+                    56: '冻毛毛雨（小）',
+                    57: '冻毛毛雨（大）',
+                    61: '小雨',
+                    63: '中雨',
+                    65: '大雨',
+                    66: '冻雨（小）',
+                    67: '冻雨（大）',
+                    71: '小雪',
+                    73: '中雪',
+                    75: '大雪',
+                    77: '雪粒',
+                    80: '阵雨（小）',
+                    81: '阵雨（中）',
+                    82: '阵雨（大）',
+                    85: '阵雪（小）',
+                    86: '阵雪（大）',
+                    95: '雷暴',
+                    96: '雷暴（冰雹）',
+                    99: '强雷暴（冰雹）'
+                };
+                return map[code] || `天气代码 ${code}`;
+            };
+
+            const readLocation = () => {
+                try { return JSON.parse(localStorage.getItem('weatherLocation') || 'null'); } catch (e) { return null; }
+            };
+            const writeLocation = (loc) => localStorage.setItem('weatherLocation', JSON.stringify(loc));
+            const readCache = () => {
+                try { return JSON.parse(localStorage.getItem('weatherCache') || 'null'); } catch (e) { return null; }
+            };
+            const writeCache = (cache) => localStorage.setItem('weatherCache', JSON.stringify(cache));
+            const locationKey = (loc) => `${Number(loc.latitude).toFixed(2)},${Number(loc.longitude).toFixed(2)}`;
+
+            let controller = null;
+            let currentLoc = null;
+
+            const fetchJson = async (url, signal) => {
+                const res = await fetch(url, { signal });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
+            };
+
+            const renderWeather = (data, loc) => {
+                const current = data?.current;
+                if (!current) throw new Error('无效的天气数据');
+
+                const temp = Math.round(current.temperature_2m);
+                const feels = typeof current.apparent_temperature === 'number' ? Math.round(current.apparent_temperature) : null;
+                const wind = typeof current.wind_speed_10m === 'number' ? Math.round(current.wind_speed_10m) : null;
+                const code = current.weather_code;
+
+                locationEl.textContent = loc.displayName || loc.name || '—';
+                tempEl.textContent = `${temp}°`;
+                descEl.textContent = weatherCodeText(code);
+
+                const parts = [];
+                if (feels !== null) parts.push(`体感 ${feels}°`);
+                if (wind !== null) parts.push(`风 ${wind} m/s`);
+                const now = new Date();
+                parts.push(`更新于 ${now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`);
+                metaEl.textContent = parts.join(' · ');
+            };
+
+            const loadWeather = async (loc, opts = {}) => {
+                const { force = false } = opts;
+                currentLoc = loc;
+
+                const key = locationKey(loc);
+                const cache = readCache();
+                const maxAgeMs = 15 * 60 * 1000;
+                if (!force && cache && cache.key === key && Date.now() - cache.ts < maxAgeMs) {
+                    try {
+                        renderWeather(cache.data, loc);
+                        setStatus('使用缓存数据（15 分钟内）');
+                        return;
+                    } catch (e) {}
+                }
+
+                if (controller) controller.abort();
+                controller = new AbortController();
+
+                setLoading(true);
+                setStatus('获取天气中…');
+                try {
+                    const url = `https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(loc.latitude)}&longitude=${encodeURIComponent(loc.longitude)}&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m&timezone=auto`;
+                    const data = await fetchJson(url, controller.signal);
+                    renderWeather(data, loc);
+                    writeCache({ key, ts: Date.now(), data });
+                    setStatus('获取成功');
+                } catch (e) {
+                    setStatus(`获取失败：${e?.message || '未知错误'}`);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const resolveCity = async (name) => {
+                if (controller) controller.abort();
+                controller = new AbortController();
+
+                const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=1&language=zh&format=json`;
+                const data = await fetchJson(url, controller.signal);
+                const first = data?.results?.[0];
+                if (!first) throw new Error('未找到城市');
+
+                const parts = [first.name, first.admin1, first.country].filter(Boolean);
+                return {
+                    name: first.name,
+                    displayName: parts.join(' · '),
+                    latitude: first.latitude,
+                    longitude: first.longitude
+                };
+            };
+
+            const onSearch = async () => {
+                const name = String(input.value || '').trim();
+                if (!name) {
+                    setStatus('请输入城市名（例如：北京）');
+                    return;
+                }
+
+                setLoading(true);
+                setStatus('查询城市中…');
+                try {
+                    const loc = await resolveCity(name);
+                    writeLocation(loc);
+                    await loadWeather(loc, { force: true });
+                } catch (e) {
+                    setStatus(`查询失败：${e?.message || '未知错误'}`);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const onRefresh = async () => {
+                if (currentLoc) return loadWeather(currentLoc, { force: true });
+                return onSearch();
+            };
+
+            const onGeolocate = () => {
+                if (!window.isSecureContext) {
+                    setStatus('定位需要 https 或 http://localhost 环境（建议用 py -m http.server）');
+                    return;
+                }
+                if (!navigator.geolocation) {
+                    setStatus('当前浏览器不支持定位');
+                    return;
+                }
+
+                setLoading(true);
+                setStatus('获取定位中…');
+                navigator.geolocation.getCurrentPosition(async (pos) => {
+                    const loc = {
+                        name: '当前位置',
+                        displayName: '当前位置',
+                        latitude: pos.coords.latitude,
+                        longitude: pos.coords.longitude
+                    };
+                    writeLocation(loc);
+                    await loadWeather(loc, { force: true });
+                    setLoading(false);
+                }, (err) => {
+                    setStatus(`定位失败：${err?.message || '未知错误'}`);
+                    setLoading(false);
+                }, { enableHighAccuracy: true, timeout: 10000 });
+            };
+
+            const onKeyDown = (e) => { if (e.key === 'Enter') onSearch(); };
+            searchBtn.addEventListener('click', onSearch);
+            refreshBtn.addEventListener('click', onRefresh);
+            geoBtn.addEventListener('click', onGeolocate);
+            input.addEventListener('keydown', onKeyDown);
+
+            const saved = readLocation();
+            if (saved) {
+                currentLoc = saved;
+                input.value = saved.name || saved.displayName || '';
+                loadWeather(saved);
+            } else {
+                setStatus('输入城市查询，或使用定位');
+            }
+
+            return () => {
+                searchBtn.removeEventListener('click', onSearch);
+                refreshBtn.removeEventListener('click', onRefresh);
+                geoBtn.removeEventListener('click', onGeolocate);
+                input.removeEventListener('keydown', onKeyDown);
+                if (controller) controller.abort();
+            };
+        }
+
+        const backToTopInit = () => {
+            const btn = document.getElementById('back-to-top');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 300) {
+                    btn.classList.remove('opacity-0', 'translate-y-10');
+                } else {
+                    btn.classList.add('opacity-0', 'translate-y-10');
+                }
+            });
+            btn.onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        const themeInit = () => {
+            const btn = document.getElementById('theme-toggle');
+            const html = document.documentElement;
+            const isDark = localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            if(isDark) html.classList.add('dark');
+            btn.onclick = () => {
+                html.classList.toggle('dark');
+                localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
+            };
+        };
+
+        document.getElementById('mobile-menu-btn').onclick = () => document.getElementById('mobile-menu').classList.toggle('hidden');
+
+        // Init
+        router.init();
+        searchManager.init();
+        backToTopInit();
+        themeInit();
+    </script>
+</body>
+</html>
