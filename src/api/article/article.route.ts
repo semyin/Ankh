@@ -24,7 +24,7 @@ app.get("/", async (c) => {
 app.get("/admin", async (c) => {
 	const supabase = c.get("supabase");
 	const query = c.req.query();
-	const { title, category_id, tag_id, is_published } = query;
+	const { title, category_id, tag_id, tag_ids, is_published } = query;
 
 	// 分页参数处理
 	const { limit, offset } = calculatePagination({
@@ -46,11 +46,21 @@ app.get("/admin", async (c) => {
 		queryBuilder = queryBuilder.eq("category_id", Number(category_id));
 	if (is_published !== undefined)
 		queryBuilder = queryBuilder.eq("is_published", is_published === "true");
-	if (tag_id) {
+
+	const tagIds = tag_ids
+		? String(tag_ids)
+				.split(",")
+				.map((v) => Number(v))
+				.filter((v) => Number.isFinite(v) && v > 0)
+		: tag_id
+			? [Number(tag_id)].filter((v) => Number.isFinite(v) && v > 0)
+			: [];
+
+	if (tagIds.length > 0) {
 		const { data: articleIds } = await supabase
 			.from("article_tag")
 			.select("article_id")
-			.eq("tag_id", Number(tag_id));
+			.in("tag_id", tagIds);
 		if (articleIds)
 			queryBuilder = queryBuilder.in(
 				"id",
@@ -61,6 +71,21 @@ app.get("/admin", async (c) => {
 	const response = await queryBuilder
 		.order("created_at", { ascending: false })
 		.range(offset, offset + limit - 1);
+
+	return result.from(c, response);
+});
+
+app.get("/admin/:id", async (c) => {
+	const id = Number(c.req.param("id"));
+	const supabase = c.get("supabase");
+
+	const response = await supabase
+		.from("article")
+		.select(`*, 
+      category(id, name, description, created_at, updated_at, emoji), 
+      tags:tag(id, name, img_url, created_at, updated_at)`)
+		.eq("id", id)
+		.single();
 
 	return result.from(c, response);
 });

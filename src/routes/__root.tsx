@@ -1,4 +1,4 @@
-import type { QueryClient } from "@tanstack/react-query";
+﻿import type { QueryClient } from "@tanstack/react-query";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import {
 	HeadContent,
@@ -6,7 +6,7 @@ import {
 	createRootRouteWithContext,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-import AppShell from "@/components/AppShell";
+import RootShell from "@/components/RootShell";
 import TanStackQueryDevtools from "@/integrations/tanstack-query/devtools";
 import { Provider as QueryProvider } from "@/integrations/tanstack-query/root-provider";
 import appCss from "@/styles.css?url";
@@ -47,9 +47,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			<head>
 				<HeadContent />
 			</head>
-			<body className="bg-gray-50 text-slate-800 dark:bg-gray-950 dark:text-slate-200 transition-colors duration-300 min-h-screen flex flex-col">
+			<body className="bg-background text-foreground transition-colors duration-300 min-h-screen flex flex-col">
 				<QueryProvider queryClient={queryClient}>
-					<AppShell>{children}</AppShell>
+					<RootShell>{children}</RootShell>
 				</QueryProvider>
 				{import.meta.env.DEV ? (
 					<TanStackDevtools

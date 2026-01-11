@@ -1,35 +1,45 @@
-export { app as authRoute }
+export { app as authRoute };
 
 import { deleteCookie, setCookie } from "hono/cookie";
 import { createApp } from "@/api/utils";
 import { result } from "@/api/utils/response";
 
-const app = createApp()
+const app = createApp();
 
-app.post('/login', async (c) => {
-  const supabase = c.get('supabase')
-  const body = await c.req.json()
+app.post("/login", async (c) => {
+	const supabase = c.get("supabase");
+	const body = await c.req.json<{ email: string; password: string }>();
 
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email: body.email,
-    password: body.password
-  })
-  
-  if (error) {
-    return result.error(c, error.message || 'Login failed', 401)
-  }
+	const { data, error } = await supabase.auth.signInWithPassword({
+		email: body.email,
+		password: body.password,
+	});
 
-  setCookie(c, 'access_token', data.session.access_token, {
-    httpOnly: true,
-    secure: import.meta.env.PROD ? true : false, // 生产环境使用 HTTPS
-    maxAge: data.session.expires_in // 7 天
-  })
+	if (error) {
+		return result.error(c, error.message || "Login failed", 401);
+	}
 
-  return result.from(c, { data, error })
-})
+	setCookie(c, "access_token", data.session.access_token, {
+		httpOnly: true,
+		secure: import.meta.env.PROD ? true : false,
+		maxAge: data.session.expires_in,
+	});
 
-app.post('/logout', async (c) => {
-  deleteCookie(c, 'access_token')
-  return result.ok(c, null, '退出成功')
-})
+	return result.from(c, { data, error });
+});
 
+app.post("/logout", async (c) => {
+	deleteCookie(c, "access_token");
+	return result.ok(c, null, "退出成功");
+});
+
+app.get("/me", async (c) => {
+	const supabase = c.get("supabase");
+	const { data, error } = await supabase.auth.getUser();
+
+	if (error || !data?.user) {
+		return result.error(c, error?.message || "Unauthorized", 401);
+	}
+
+	return result.ok(c, data.user);
+});

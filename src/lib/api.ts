@@ -5,7 +5,10 @@ export type ApiSuccessResponse<T> = {
 	count?: number;
 };
 
-export async function apiData<T>(path: string, init?: RequestInit): Promise<T> {
+export async function apiResult<T>(
+	path: string,
+	init?: RequestInit,
+): Promise<ApiSuccessResponse<T>> {
 	const res = await fetch(path, {
 		...init,
 		headers: {
@@ -38,7 +41,11 @@ export async function apiData<T>(path: string, init?: RequestInit): Promise<T> {
 		);
 	}
 
-	return parsed.data;
+	return parsed;
+}
+
+export async function apiData<T>(path: string, init?: RequestInit): Promise<T> {
+	return (await apiResult<T>(path, init)).data;
 }
 
 export type Category = {
@@ -55,6 +62,18 @@ export type Tag = {
 	name: string;
 	img_url: string | null;
 	usage_count: number | null;
+	created_at: string;
+	updated_at: string;
+};
+
+export type Meta = {
+	id: number;
+	name: string | null;
+	property: string | null;
+	content: string | null;
+	resource_type: string | null;
+	resource_id: number | null;
+	is_default: boolean;
 	created_at: string;
 	updated_at: string;
 };
@@ -120,6 +139,49 @@ export type ArticleDetail = {
 	tags: ArticleTag[] | null;
 };
 
+export type AdminArticleListItem = {
+	id: number;
+	title: string;
+	cover_image: string | null;
+	is_top: boolean;
+	is_published: boolean;
+	view_count: number;
+	created_at: string;
+	updated_at: string;
+	category: ArticleCategory | null;
+	tags: Array<Pick<ArticleTag, "id" | "name">> | null;
+};
+
+export type AdminArticleDetail = {
+	id: number;
+	title: string;
+	summary: string | null;
+	content: string;
+	cover_image: string | null;
+	is_top: boolean;
+	is_published: boolean;
+	created_at: string;
+	updated_at: string;
+	category: (ArticleCategory & { description?: string | null }) | null;
+	tags: ArticleTag[] | null;
+};
+
+export function login(email: string, password: string) {
+	return apiData<any>("/api/auth/login", {
+		method: "POST",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify({ email, password }),
+	});
+}
+
+export function logout() {
+	return apiData<null>("/api/auth/logout", { method: "POST" });
+}
+
+export function getMe() {
+	return apiData<any>("/api/auth/me");
+}
+
 export function getProfile() {
 	return apiData<Profile>("/api/profile");
 }
@@ -132,6 +194,58 @@ export function getTags() {
 	return apiData<Tag[]>("/api/tags");
 }
 
+export function getMeta(params?: {
+	resource_type?: string;
+	resource_id?: number;
+}) {
+	const qs = new URLSearchParams();
+	if (params?.resource_type) qs.set("resource_type", params.resource_type);
+	if (params?.resource_id !== undefined)
+		qs.set("resource_id", String(params.resource_id));
+	const path = qs.size ? `/api/meta?${qs}` : "/api/meta";
+	return apiData<Meta[]>(path);
+}
+
+export function createMeta(payload: {
+	name: string | null;
+	property: string | null;
+	content: string | null;
+	resource_type: string;
+	resource_id: number;
+	is_default?: boolean;
+}) {
+	return apiData<Meta>("/api/meta", {
+		method: "POST",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify({
+			...payload,
+			is_default: payload.is_default ?? false,
+		}),
+	});
+}
+
+export function updateMeta(
+	id: number,
+	payload: Partial<{
+		name: string | null;
+		property: string | null;
+		content: string | null;
+		resource_type: string | null;
+		resource_id: number | null;
+		is_default: boolean;
+	}>,
+) {
+	return apiData<Meta>(`/api/meta/${id}`, {
+		method: "PUT",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify(payload),
+	});
+}
+
+export function deleteMeta(id: number) {
+	return apiData<Meta>(`/api/meta/${id}`, { method: "DELETE" });
+}
+
 export function getFriendLinks() {
 	return apiData<FriendLink[]>("/api/friend-links?is_visible=true");
 }
@@ -142,4 +256,98 @@ export function getArticles() {
 
 export function getArticle(id: number) {
 	return apiData<ArticleDetail>(`/api/articles/${id}`);
+}
+
+export async function getAdminArticles(params?: {
+	title?: string;
+	category_id?: number;
+	tag_ids?: number[];
+	is_published?: boolean;
+	page?: number;
+	pageSize?: number;
+}) {
+	const qs = new URLSearchParams();
+	if (params?.title) qs.set("title", params.title);
+	if (params?.category_id !== undefined)
+		qs.set("category_id", String(params.category_id));
+	if (params?.tag_ids?.length) qs.set("tag_ids", params.tag_ids.join(","));
+	if (params?.is_published !== undefined)
+		qs.set("is_published", String(params.is_published));
+	if (params?.page !== undefined) qs.set("page", String(params.page));
+	if (params?.pageSize !== undefined)
+		qs.set("pageSize", String(params.pageSize));
+
+	const path = qs.size ? `/api/articles/admin?${qs}` : "/api/articles/admin";
+	const res = await apiResult<AdminArticleListItem[]>(path);
+	return { items: res.data, count: res.count ?? 0 };
+}
+
+export function getAdminArticle(id: number) {
+	return apiData<AdminArticleDetail>(`/api/articles/admin/${id}`);
+}
+
+export function createArticle(payload: {
+	title: string;
+	summary: string | null;
+	content: string;
+	is_published?: boolean;
+	category_id?: number | null;
+	cover_image?: string | null;
+	is_top?: boolean;
+}) {
+	return apiData<AdminArticleDetail>("/api/articles", {
+		method: "POST",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify(payload),
+	});
+}
+
+export function updateArticle(
+	id: number,
+	payload: Partial<{
+		title: string;
+		summary: string | null;
+		content: string;
+		cover_image: string | null;
+		is_top: boolean;
+		is_published: boolean;
+		category_id: number | null;
+	}>,
+) {
+	return apiData<AdminArticleDetail>(`/api/articles/${id}`, {
+		method: "PUT",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify(payload),
+	});
+}
+
+export function setArticlePublished(id: number, is_published: boolean) {
+	return apiData<AdminArticleDetail>(`/api/articles/${id}/publish`, {
+		method: "PATCH",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify({ is_published }),
+	});
+}
+
+export function setArticleTags(id: number, tagIds: number[]) {
+	return apiData<unknown>(`/api/articles/${id}/tags`, {
+		method: "PUT",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify({ tagIds }),
+	});
+}
+
+export function deleteArticle(id: number) {
+	return apiData<AdminArticleDetail>(`/api/articles/${id}`, {
+		method: "DELETE",
+	});
+}
+
+export function uploadImage(file: File) {
+	const form = new FormData();
+	form.append("file", file);
+	return apiData<{ path: string; url: string }>("/api/upload", {
+		method: "POST",
+		body: form,
+	});
 }
