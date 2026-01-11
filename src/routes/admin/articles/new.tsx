@@ -1,16 +1,16 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ImageUp, Info, Save } from "lucide-react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { AdminPageHeader, AdminSurface } from "@/components/admin/AdminLayout";
 import { MarkdownEditor } from "@/components/admin/MarkdownEditor";
+import { MetaEditor, type MetaDraft } from "@/components/admin/MetaEditor";
 import { TagMultiSelect } from "@/components/admin/TagMultiSelect";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SelectMenu } from "@/components/ui/select-menu";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import {
 	createMeta,
 	createArticle,
@@ -45,45 +45,9 @@ function AdminNewArticlePage() {
 	const [coverImage, setCoverImage] = useState("");
 	const [isTop, setIsTop] = useState(false);
 
-	const [seoTitle, setSeoTitle] = useState("");
-	const [seoDescription, setSeoDescription] = useState("");
-	const [seoKeywords, setSeoKeywords] = useState("");
-	const [ogImage, setOgImage] = useState("");
-
-	const [inlineImageUrl, setInlineImageUrl] = useState("");
-	const [inlineImageAlt, setInlineImageAlt] = useState("");
-
 	const [uploadingCover, setUploadingCover] = useState(false);
-	const [uploadingInline, setUploadingInline] = useState(false);
 	const [uploadError, setUploadError] = useState<string | null>(null);
-
-	const editorRef = useRef<HTMLTextAreaElement | null>(null);
-
-	const insertMarkdownImage = (url: string, alt: string) => {
-		const cleanedUrl = url.trim();
-		if (!cleanedUrl) return;
-
-		const markdown = `![${alt || "image"}](${cleanedUrl})`;
-		const textarea = editorRef.current;
-
-		if (!textarea) {
-			setContent(
-				(prev) => `${prev}${prev.endsWith("\n") ? "" : "\n"}${markdown}\n`,
-			);
-			return;
-		}
-
-		const start = textarea.selectionStart ?? content.length;
-		const end = textarea.selectionEnd ?? start;
-		const next = `${content.slice(0, start)}${markdown}${content.slice(end)}`;
-		setContent(next);
-
-		requestAnimationFrame(() => {
-			textarea.focus();
-			const cursor = start + markdown.length;
-			textarea.setSelectionRange(cursor, cursor);
-		});
-	};
+	const [metaDrafts, setMetaDrafts] = useState<MetaDraft[]>([]);
 
 	const mutation = useMutation({
 		mutationFn: async () => {
@@ -99,48 +63,19 @@ function AdminNewArticlePage() {
 
 			await setArticleTags(created.id, selectedTagIds);
 
-			const metaPayloads = [
-				seoTitle.trim()
-					? {
-							name: "title",
-							property: null,
-							content: seoTitle.trim(),
-							resource_type: "article",
-							resource_id: created.id,
-						}
-					: null,
-				seoDescription.trim()
-					? {
-							name: "description",
-							property: null,
-							content: seoDescription.trim(),
-							resource_type: "article",
-							resource_id: created.id,
-						}
-					: null,
-				seoKeywords.trim()
-					? {
-							name: "keywords",
-							property: null,
-							content: seoKeywords.trim(),
-							resource_type: "article",
-							resource_id: created.id,
-						}
-					: null,
-				ogImage.trim()
-					? {
-							name: null,
-							property: "og:image",
-							content: ogImage.trim(),
-							resource_type: "article",
-							resource_id: created.id,
-						}
-					: null,
-			].filter(Boolean) as Array<Parameters<typeof createMeta>[0]>;
+			const metaPayloads = metaDrafts
+				.map((m) => ({
+					name: m.name.trim() ? m.name.trim() : null,
+					property: m.property.trim() ? m.property.trim() : null,
+					content: m.content.trim() ? m.content.trim() : null,
+					resource_type: "article",
+					resource_id: created.id,
+				}))
+				.filter((m) => m.content && (m.name || m.property)) as Array<
+				Parameters<typeof createMeta>[0]
+			>;
 
-			if (metaPayloads.length) {
-				await Promise.all(metaPayloads.map((p) => createMeta(p)));
-			}
+			if (metaPayloads.length) await Promise.all(metaPayloads.map(createMeta));
 
 			return created;
 		},
@@ -182,8 +117,8 @@ function AdminNewArticlePage() {
 
 			<div className="grid gap-6 lg:grid-cols-[1fr_360px]">
 				<AdminSurface innerClassName="p-6">
-					<div className="space-y-6">
-						<div className="space-y-3">
+					<div className="space-y-8">
+						<div className="flex flex-col gap-4">
 							<Label htmlFor="title">Title</Label>
 							<Input
 								id="title"
@@ -194,7 +129,7 @@ function AdminNewArticlePage() {
 							/>
 						</div>
 
-						<div className="space-y-3">
+						<div className="flex flex-col gap-4">
 							<Label htmlFor="summary">Summary</Label>
 							<Input
 								id="summary"
@@ -204,7 +139,7 @@ function AdminNewArticlePage() {
 							/>
 						</div>
 
-						<div className="space-y-3">
+						<div className="flex flex-col gap-4">
 							<Label htmlFor="content">Content (Markdown)</Label>
 							<MarkdownEditor
 								id="content"
@@ -212,7 +147,7 @@ function AdminNewArticlePage() {
 								onChange={setContent}
 								placeholder="# Hello world"
 								heightClassName="h-[720px]"
-								textareaRef={editorRef}
+								onUploadImage={uploadImage}
 							/>
 						</div>
 
@@ -228,10 +163,10 @@ function AdminNewArticlePage() {
 
 				<div className="space-y-6">
 					<AdminSurface innerClassName="p-6">
-						<div className="space-y-5">
+						<div className="space-y-6">
 							<div className="text-sm font-medium">Metadata</div>
 
-							<div className="space-y-3">
+							<div className="flex flex-col gap-4">
 								<Label htmlFor="category">Category</Label>
 								<SelectMenu
 									value={categoryId === "none" ? "none" : String(categoryId)}
@@ -252,7 +187,7 @@ function AdminNewArticlePage() {
 								/>
 							</div>
 
-							<div className="space-y-3">
+							<div className="flex flex-col gap-4">
 								<Label>Tags</Label>
 								<TagMultiSelect
 									tags={tags}
@@ -262,7 +197,7 @@ function AdminNewArticlePage() {
 								/>
 							</div>
 
-							<div className="space-y-3">
+							<div className="flex flex-col gap-4">
 								<Label htmlFor="cover-image">Cover image</Label>
 								<div className="flex items-center gap-2">
 									<Input
@@ -336,132 +271,9 @@ function AdminNewArticlePage() {
 					</AdminSurface>
 
 					<AdminSurface innerClassName="p-6">
-						<div className="space-y-5">
-							<div className="text-sm font-medium">SEO</div>
-
-							<div className="space-y-3">
-								<Label htmlFor="seo-title">Meta title</Label>
-								<Input
-									id="seo-title"
-									value={seoTitle}
-									onChange={(e) => setSeoTitle(e.target.value)}
-									placeholder="Optional"
-								/>
-							</div>
-
-							<div className="space-y-3">
-								<Label htmlFor="seo-description">Meta description</Label>
-								<Textarea
-									id="seo-description"
-									value={seoDescription}
-									onChange={(e) => setSeoDescription(e.target.value)}
-									placeholder="Optional"
-									className="min-h-[96px]"
-								/>
-							</div>
-
-							<div className="space-y-3">
-								<Label htmlFor="seo-keywords">Meta keywords</Label>
-								<Input
-									id="seo-keywords"
-									value={seoKeywords}
-									onChange={(e) => setSeoKeywords(e.target.value)}
-									placeholder="e.g. react, hono, supabase"
-								/>
-							</div>
-
-							<div className="space-y-3">
-								<Label htmlFor="og-image">OG image (og:image)</Label>
-								<Input
-									id="og-image"
-									type="url"
-									value={ogImage}
-									onChange={(e) => setOgImage(e.target.value)}
-									placeholder="https://..."
-								/>
-							</div>
-						</div>
-					</AdminSurface>
-
-					<AdminSurface innerClassName="p-6">
-						<div className="space-y-5">
-							<div className="text-sm font-medium">Insert Image</div>
-
-							<div className="space-y-3">
-								<Label htmlFor="inline-image-url">Image URL</Label>
-								<div className="flex items-center gap-2">
-									<Input
-										id="inline-image-url"
-										type="url"
-										value={inlineImageUrl}
-										onChange={(e) => setInlineImageUrl(e.target.value)}
-										placeholder="https://..."
-									/>
-									<Button
-										type="button"
-										variant="secondary"
-										size="sm"
-										disabled={!inlineImageUrl.trim()}
-										onClick={() =>
-											insertMarkdownImage(inlineImageUrl, inlineImageAlt.trim())
-										}
-									>
-										Insert
-									</Button>
-								</div>
-							</div>
-
-							<div className="space-y-3">
-								<Label htmlFor="inline-image-alt">Alt text</Label>
-								<Input
-									id="inline-image-alt"
-									value={inlineImageAlt}
-									onChange={(e) => setInlineImageAlt(e.target.value)}
-									placeholder="image"
-								/>
-							</div>
-
-							<div className="space-y-3">
-								<Label>Upload image</Label>
-								<input
-									type="file"
-									accept="image/*"
-									className="hidden"
-									id="inline-image-upload"
-									onChange={async (e) => {
-										const file = e.target.files?.[0];
-										e.target.value = "";
-										if (!file) return;
-										setUploadError(null);
-										setUploadingInline(true);
-										try {
-											const res = await uploadImage(file);
-											insertMarkdownImage(
-												res.url,
-												inlineImageAlt.trim() || file.name,
-											);
-										} catch (err) {
-											setUploadError(
-												err instanceof Error ? err.message : "Upload failed",
-											);
-										} finally {
-											setUploadingInline(false);
-										}
-									}}
-								/>
-								<Button
-									type="button"
-									variant="outline"
-									size="sm"
-									disabled={uploadingInline}
-									onClick={() =>
-										document.getElementById("inline-image-upload")?.click()
-									}
-								>
-									<ImageUp className="h-4 w-4" />
-									{uploadingInline ? "Uploading..." : "Upload & Insert"}
-								</Button>
-							</div>
+						<div className="space-y-6">
+							<div className="text-sm font-medium">Meta</div>
+							<MetaEditor value={metaDrafts} onChange={setMetaDrafts} />
 						</div>
 					</AdminSurface>
 

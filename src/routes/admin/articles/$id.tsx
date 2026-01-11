@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { CheckCircle2, ImageUp, Info, Save } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AdminPageHeader, AdminSurface } from "@/components/admin/AdminLayout";
 import { MarkdownEditor } from "@/components/admin/MarkdownEditor";
+import { MetaEditor, type MetaDraft } from "@/components/admin/MetaEditor";
 import { TagMultiSelect } from "@/components/admin/TagMultiSelect";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SelectMenu } from "@/components/ui/select-menu";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import {
 	createMeta,
 	deleteMeta,
@@ -36,8 +36,6 @@ function AdminEditArticlePage() {
 	const navigate = useNavigate();
 	const { id } = Route.useParams();
 	const articleId = Number(id);
-
-	const editorRef = useRef<HTMLTextAreaElement | null>(null);
 
 	const { data: categories = [] } = useQuery({
 		queryKey: ["categories"],
@@ -70,44 +68,11 @@ function AdminEditArticlePage() {
 	const [coverImage, setCoverImage] = useState("");
 	const [isTop, setIsTop] = useState(false);
 
-	const [seoTitle, setSeoTitle] = useState("");
-	const [seoDescription, setSeoDescription] = useState("");
-	const [seoKeywords, setSeoKeywords] = useState("");
-	const [ogImage, setOgImage] = useState("");
+	const [metaDrafts, setMetaDrafts] = useState<MetaDraft[]>([]);
 	const [metaInitialized, setMetaInitialized] = useState(false);
 
-	const [inlineImageUrl, setInlineImageUrl] = useState("");
-	const [inlineImageAlt, setInlineImageAlt] = useState("");
-
 	const [uploadingCover, setUploadingCover] = useState(false);
-	const [uploadingInline, setUploadingInline] = useState(false);
 	const [uploadError, setUploadError] = useState<string | null>(null);
-
-	const insertMarkdownImage = (url: string, alt: string) => {
-		const cleanedUrl = url.trim();
-		if (!cleanedUrl) return;
-
-		const markdown = `![${alt || "image"}](${cleanedUrl})`;
-		const textarea = editorRef.current;
-
-		if (!textarea) {
-			setContent(
-				(prev) => `${prev}${prev.endsWith("\n") ? "" : "\n"}${markdown}\n`,
-			);
-			return;
-		}
-
-		const start = textarea.selectionStart ?? content.length;
-		const end = textarea.selectionEnd ?? start;
-		const next = `${content.slice(0, start)}${markdown}${content.slice(end)}`;
-		setContent(next);
-
-		requestAnimationFrame(() => {
-			textarea.focus();
-			const cursor = start + markdown.length;
-			textarea.setSelectionRange(cursor, cursor);
-		});
-	};
 
 	useEffect(() => {
 		if (!data) return;
@@ -125,15 +90,14 @@ function AdminEditArticlePage() {
 		if (!metaQuery.isSuccess) return;
 
 		const items = metaQuery.data ?? [];
-		const byName = (name: string) =>
-			items.find((m) => m.name === name)?.content ?? "";
-		const byProperty = (property: string) =>
-			items.find((m) => m.property === property)?.content ?? "";
-
-		setSeoTitle(byName("title"));
-		setSeoDescription(byName("description"));
-		setSeoKeywords(byName("keywords"));
-		setOgImage(byProperty("og:image"));
+		setMetaDrafts(
+			items.map((m) => ({
+				id: m.id,
+				name: m.name ?? "",
+				property: m.property ?? "",
+				content: m.content ?? "",
+			})),
+		);
 		setMetaInitialized(true);
 	}, [metaInitialized, metaQuery.data, metaQuery.isSuccess]);
 
@@ -159,46 +123,54 @@ function AdminEditArticlePage() {
 			const existing = metaQuery.data ?? [];
 			const ops: Array<Promise<unknown>> = [];
 
-			const sync = ({
-				kind,
-				key,
-				value,
-			}: {
-				kind: "name" | "property";
-				key: string;
-				value: string;
-			}) => {
-				const cleaned = value.trim();
-				const found =
-					kind === "name"
-						? existing.find((m) => m.name === key)
-						: existing.find((m) => m.property === key);
+			const draftIds = new Set(
+				metaDrafts
+					.map((m) => m.id)
+					.filter((id): id is number => typeof id === "number"),
+			);
 
-				if (!cleaned) {
-					if (found) ops.push(deleteMeta(found.id));
-					return;
+			for (const m of existing) {
+				if (!draftIds.has(m.id)) ops.push(deleteMeta(m.id));
+			}
+
+			for (const draft of metaDrafts) {
+				const cleanedName = draft.name.trim() ? draft.name.trim() : null;
+				const cleanedProperty = draft.property.trim()
+					? draft.property.trim()
+					: null;
+				const cleanedContent = draft.content.trim()
+					? draft.content.trim()
+					: null;
+				const hasKey = Boolean(cleanedName || cleanedProperty);
+				const hasContent = Boolean(cleanedContent);
+
+				if (draft.id) {
+					if (!hasKey || !hasContent) {
+						ops.push(deleteMeta(draft.id));
+						continue;
+					}
+					ops.push(
+						updateMeta(draft.id, {
+							name: cleanedName,
+							property: cleanedProperty,
+							content: cleanedContent,
+						}),
+					);
+					continue;
 				}
 
-				if (found) {
-					ops.push(updateMeta(found.id, { content: cleaned }));
-					return;
+				if (hasKey && hasContent) {
+					ops.push(
+						createMeta({
+							name: cleanedName,
+							property: cleanedProperty,
+							content: cleanedContent,
+							resource_type: "article",
+							resource_id: articleId,
+						}),
+					);
 				}
-
-				ops.push(
-					createMeta({
-						name: kind === "name" ? key : null,
-						property: kind === "property" ? key : null,
-						content: cleaned,
-						resource_type: "article",
-						resource_id: articleId,
-					}),
-				);
-			};
-
-			sync({ kind: "name", key: "title", value: seoTitle });
-			sync({ kind: "name", key: "description", value: seoDescription });
-			sync({ kind: "name", key: "keywords", value: seoKeywords });
-			sync({ kind: "property", key: "og:image", value: ogImage });
+			}
 
 			if (ops.length) await Promise.all(ops);
 
@@ -274,7 +246,7 @@ function AdminEditArticlePage() {
 
 			<div className="grid gap-6 lg:grid-cols-[1fr_360px]">
 				<AdminSurface innerClassName="p-6">
-					<div className="space-y-6">
+					<div className="space-y-8">
 						{isPending ? (
 							<div className="text-sm text-muted-foreground">Loading...</div>
 						) : error ? (
@@ -283,7 +255,7 @@ function AdminEditArticlePage() {
 							</div>
 						) : null}
 
-						<div className="space-y-3">
+						<div className="flex flex-col gap-4">
 							<Label htmlFor="title">Title</Label>
 							<Input
 								id="title"
@@ -293,7 +265,7 @@ function AdminEditArticlePage() {
 							/>
 						</div>
 
-						<div className="space-y-3">
+						<div className="flex flex-col gap-4">
 							<Label htmlFor="summary">Summary</Label>
 							<Input
 								id="summary"
@@ -302,7 +274,7 @@ function AdminEditArticlePage() {
 							/>
 						</div>
 
-						<div className="space-y-3">
+						<div className="flex flex-col gap-4">
 							<Label htmlFor="content">Content (Markdown)</Label>
 							<MarkdownEditor
 								id="content"
@@ -310,7 +282,7 @@ function AdminEditArticlePage() {
 								onChange={setContent}
 								placeholder="# Hello world"
 								heightClassName="h-[720px]"
-								textareaRef={editorRef}
+								onUploadImage={uploadImage}
 							/>
 						</div>
 
@@ -333,10 +305,10 @@ function AdminEditArticlePage() {
 
 				<div className="space-y-6">
 					<AdminSurface innerClassName="p-6">
-						<div className="space-y-5">
+						<div className="space-y-6">
 							<div className="text-sm font-medium">Metadata</div>
 
-							<div className="space-y-3">
+							<div className="flex flex-col gap-4">
 								<Label htmlFor="category">Category</Label>
 								<SelectMenu
 									value={categoryId === "none" ? "none" : String(categoryId)}
@@ -358,7 +330,7 @@ function AdminEditArticlePage() {
 								/>
 							</div>
 
-							<div className="space-y-3">
+							<div className="flex flex-col gap-4">
 								<Label>Tags</Label>
 								<TagMultiSelect
 									tags={tags}
@@ -368,7 +340,7 @@ function AdminEditArticlePage() {
 								/>
 							</div>
 
-							<div className="space-y-3">
+							<div className="flex flex-col gap-4">
 								<Label htmlFor="cover-image">Cover image</Label>
 								<div className="flex items-center gap-2">
 									<Input
@@ -447,55 +419,13 @@ function AdminEditArticlePage() {
 					</AdminSurface>
 
 					<AdminSurface innerClassName="p-6">
-						<div className="space-y-5">
-							<div className="text-sm font-medium">SEO</div>
-
-							<div className="space-y-3">
-								<Label htmlFor="seo-title">Meta title</Label>
-								<Input
-									id="seo-title"
-									value={seoTitle}
-									onChange={(e) => setSeoTitle(e.target.value)}
-									placeholder="Optional"
-									disabled={!data}
-								/>
-							</div>
-
-							<div className="space-y-3">
-								<Label htmlFor="seo-description">Meta description</Label>
-								<Textarea
-									id="seo-description"
-									value={seoDescription}
-									onChange={(e) => setSeoDescription(e.target.value)}
-									placeholder="Optional"
-									className="min-h-[96px]"
-									disabled={!data}
-								/>
-							</div>
-
-							<div className="space-y-3">
-								<Label htmlFor="seo-keywords">Meta keywords</Label>
-								<Input
-									id="seo-keywords"
-									value={seoKeywords}
-									onChange={(e) => setSeoKeywords(e.target.value)}
-									placeholder="e.g. react, hono, supabase"
-									disabled={!data}
-								/>
-							</div>
-
-							<div className="space-y-3">
-								<Label htmlFor="og-image">OG image (og:image)</Label>
-								<Input
-									id="og-image"
-									type="url"
-									value={ogImage}
-									onChange={(e) => setOgImage(e.target.value)}
-									placeholder="https://..."
-									disabled={!data}
-								/>
-							</div>
-
+						<div className="space-y-6">
+							<div className="text-sm font-medium">Meta</div>
+							<MetaEditor
+								value={metaDrafts}
+								onChange={setMetaDrafts}
+								disabled={!data}
+							/>
 							{metaQuery.isError ? (
 								<div className="text-sm text-destructive">
 									{metaQuery.error instanceof Error
@@ -503,90 +433,6 @@ function AdminEditArticlePage() {
 										: "Meta load failed"}
 								</div>
 							) : null}
-						</div>
-					</AdminSurface>
-
-					<AdminSurface innerClassName="p-6">
-						<div className="space-y-5">
-							<div className="text-sm font-medium">Insert Image</div>
-
-							<div className="space-y-3">
-								<Label htmlFor="inline-image-url">Image URL</Label>
-								<div className="flex items-center gap-2">
-									<Input
-										id="inline-image-url"
-										type="url"
-										value={inlineImageUrl}
-										onChange={(e) => setInlineImageUrl(e.target.value)}
-										placeholder="https://..."
-										disabled={!data}
-									/>
-									<Button
-										type="button"
-										variant="secondary"
-										size="sm"
-										disabled={!data || !inlineImageUrl.trim()}
-										onClick={() =>
-											insertMarkdownImage(inlineImageUrl, inlineImageAlt.trim())
-										}
-									>
-										Insert
-									</Button>
-								</div>
-							</div>
-
-							<div className="space-y-3">
-								<Label htmlFor="inline-image-alt">Alt text</Label>
-								<Input
-									id="inline-image-alt"
-									value={inlineImageAlt}
-									onChange={(e) => setInlineImageAlt(e.target.value)}
-									placeholder="image"
-									disabled={!data}
-								/>
-							</div>
-
-							<div className="space-y-3">
-								<Label>Upload image</Label>
-								<input
-									type="file"
-									accept="image/*"
-									className="hidden"
-									id="inline-image-upload"
-									onChange={async (e) => {
-										const file = e.target.files?.[0];
-										e.target.value = "";
-										if (!file) return;
-										setUploadError(null);
-										setUploadingInline(true);
-										try {
-											const res = await uploadImage(file);
-											insertMarkdownImage(
-												res.url,
-												inlineImageAlt.trim() || file.name,
-											);
-										} catch (err) {
-											setUploadError(
-												err instanceof Error ? err.message : "Upload failed",
-											);
-										} finally {
-											setUploadingInline(false);
-										}
-									}}
-								/>
-								<Button
-									type="button"
-									variant="outline"
-									size="sm"
-									disabled={!data || uploadingInline}
-									onClick={() =>
-										document.getElementById("inline-image-upload")?.click()
-									}
-								>
-									<ImageUp className="h-4 w-4" />
-									{uploadingInline ? "Uploading..." : "Upload & Insert"}
-								</Button>
-							</div>
 						</div>
 					</AdminSurface>
 

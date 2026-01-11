@@ -22,7 +22,8 @@ const variantClass: Record<ButtonVariant, string> = {
 	outline:
 		"border border-input bg-background hover:bg-accent hover:text-accent-foreground",
 	ghost: "hover:bg-accent hover:text-accent-foreground",
-	destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+	destructive:
+		"bg-destructive text-destructive-foreground hover:bg-destructive/90",
 	link: "text-primary underline-offset-4 hover:underline",
 };
 
@@ -52,16 +53,15 @@ export function buttonClassName({
 	);
 }
 
-export function Button({
-	className,
-	variant = "default",
-	size = "default",
-	...props
-}: ButtonProps) {
-	return (
-		<button
-			className={buttonClassName({ variant, size, className })}
-			{...props}
-		/>
-	);
-}
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+	({ className, variant = "default", size = "default", ...props }, ref) => {
+		return (
+			<button
+				ref={ref}
+				className={buttonClassName({ variant, size, className })}
+				{...props}
+			/>
+		);
+	},
+);
+Button.displayName = "Button";
