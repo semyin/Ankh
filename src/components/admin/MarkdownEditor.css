@@ -1,0 +1,111 @@
+@layer components {
+	.markdown-editor,
+	.markdown-editor .rc-md-editor {
+		width: 100%;
+		max-width: 100%;
+		overflow: hidden;
+	}
+
+	.markdown-editor .rc-md-editor {
+		border-radius: 0.75rem;
+		border: 1px solid hsl(var(--border));
+		background-color: hsl(var(--card));
+		color: hsl(var(--card-foreground));
+		box-shadow: 0 4px 12px rgb(15 23 42 / 0.04);
+	}
+
+	.dark .markdown-editor .rc-md-editor {
+		border-color: hsl(var(--border));
+		background-color: hsl(var(--card));
+		color: hsl(var(--card-foreground));
+		box-shadow: 0 8px 24px rgb(15 23 42 / 0.35);
+	}
+
+	.markdown-editor .rc-md-editor .rc-md-navigation {
+		border-bottom: 1px solid hsl(var(--border));
+		border-top-left-radius: 0.75rem;
+		border-top-right-radius: 0.75rem;
+		background-color: hsl(var(--muted));
+		color: hsl(var(--muted-foreground));
+	}
+
+	.markdown-editor .rc-md-editor .rc-md-navigation .button {
+		color: inherit;
+		transition: color 0.15s ease;
+	}
+
+	.markdown-editor .rc-md-editor .rc-md-navigation .button:hover {
+		color: hsl(var(--foreground));
+	}
+
+	.markdown-editor .rc-md-editor .editor-container > .section > .section-container {
+		padding: 0;
+	}
+
+	.markdown-editor .rc-md-editor .editor-container {
+		width: 100%;
+		overflow: hidden;
+	}
+
+	.markdown-editor .rc-md-editor .editor-container > .section {
+		min-width: 0;
+	}
+
+	.markdown-editor__instance {
+		border: none;
+		background: transparent;
+		box-shadow: none;
+	}
+
+	.markdown-editor__md .input {
+		font-family: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas,
+			"Liberation Mono", "Courier New", monospace;
+		font-size: 0.9rem;
+		line-height: 1.6;
+		padding: 1rem 1.25rem;
+		color: hsl(var(--foreground));
+		background-color: hsl(var(--background));
+	}
+
+	.dark .markdown-editor__md .input {
+		background-color: hsl(var(--secondary));
+	}
+
+	.markdown-editor__preview {
+		padding: 1rem 1.25rem;
+		color: hsl(var(--foreground));
+	}
+
+	.markdown-editor__preview .code-block {
+		margin-top: 1rem;
+	}
+
+	.markdown-editor .rc-md-editor .tool-bar .button {
+		color: hsl(var(--muted-foreground));
+	}
+
+	.markdown-editor .rc-md-editor .tool-bar .button:hover {
+		color: hsl(var(--foreground));
+	}
+
+	.markdown-editor .rc-md-editor .drop-wrap {
+		border-color: hsl(var(--border));
+		box-shadow: 0 8px 32px rgb(15 23 42 / 0.08);
+	}
+
+	@media (max-width: 1024px) {
+		.markdown-editor .rc-md-editor .editor-container {
+			flex-direction: column;
+		}
+
+		.markdown-editor .rc-md-editor .editor-container > .section {
+			border-right: none;
+			border-bottom: 1px solid hsl(var(--border));
+			width: 100%;
+		}
+
+		.markdown-editor .rc-md-editor .editor-container > .section:last-child {
+			border-bottom: none;
+		}
+	}
+}

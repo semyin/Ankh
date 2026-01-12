@@ -229,6 +229,53 @@ body {
 	text-underline-offset: 4px;
 }
 
+.prose table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 1.5rem 0;
+	font-size: 0.95rem;
+	border: 1px solid rgba(148, 163, 184, 0.35);
+	border-radius: 0.5rem;
+	overflow: hidden;
+}
+
+.prose thead {
+	background-color: rgba(148, 163, 184, 0.2);
+}
+
+.prose th,
+.prose td {
+	padding: 0.75rem 1rem;
+	text-align: left;
+	border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+	border-right: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.prose th:last-child,
+.prose td:last-child {
+	border-right: none;
+}
+
+.prose tbody tr:last-child td {
+	border-bottom: none;
+}
+
+.prose tbody tr:nth-child(2n) {
+	background-color: rgba(148, 163, 184, 0.15);
+}
+
+.dark .prose table {
+	border-color: rgba(148, 163, 184, 0.4);
+}
+
+.dark .prose thead {
+	background-color: rgba(148, 163, 184, 0.15);
+}
+
+.dark .prose tbody tr:nth-child(2n) {
+	background-color: rgba(148, 163, 184, 0.08);
+}
+
 /* Animation */
 .fade-in {
 	animation: fadeIn 0.4s ease-out forwards;

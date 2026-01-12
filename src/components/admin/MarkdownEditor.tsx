@@ -1,111 +1,30 @@
-import {
-	Bold,
-	Code,
-	Heading2,
-	Image as ImageIcon,
-	Italic,
-	Link as LinkIcon,
-	List,
-	ListOrdered,
-	Quote,
-	Strikethrough,
-} from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import MdEditor from "react-markdown-editor-lite";
+import type { UploadFunc } from "react-markdown-editor-lite";
+import "react-markdown-editor-lite/lib/index.css";
+import "./MarkdownEditor.css";
+
 import { renderMarkdown } from "@/lib/markdown";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
-function setRef<T>(ref: React.Ref<T> | undefined, value: T) {
-	if (!ref) return;
-	if (typeof ref === "function") ref(value);
-	else (ref as React.MutableRefObject<T>).current = value;
-}
-
-function insertAtSelection(params: {
-	textarea: HTMLTextAreaElement | null;
+type MarkdownEditorProps = {
+	id: string;
 	value: string;
 	onChange: (next: string) => void;
-	text: string;
-}) {
-	const { textarea, value, onChange, text } = params;
-	if (!textarea) {
-		onChange(`${value}${value.endsWith("\n") ? "" : "\n"}${text}`);
-		return;
-	}
-
-	const start = textarea.selectionStart ?? value.length;
-	const end = textarea.selectionEnd ?? start;
-	const next = `${value.slice(0, start)}${text}${value.slice(end)}`;
-	onChange(next);
-
-	requestAnimationFrame(() => {
-		textarea.focus();
-		const cursor = start + text.length;
-		textarea.setSelectionRange(cursor, cursor);
-	});
-}
-
-function insertBlock(params: {
-	textarea: HTMLTextAreaElement | null;
-	value: string;
-	onChange: (next: string) => void;
-	block: string;
-}) {
-	const { textarea, value, onChange, block } = params;
-	if (!textarea) {
-		onChange(`${value}${value.endsWith("\n") ? "" : "\n"}${block}\n`);
-		return;
-	}
-
-	const start = textarea.selectionStart ?? value.length;
-	const before = start > 0 && value[start - 1] !== "\n" ? "\n" : "";
-	const after = value[start] && value[start] !== "\n" ? "\n" : "";
-	insertAtSelection({
-		textarea,
-		value,
-		onChange,
-		text: `${before}${block}${after}`,
-	});
-}
-
-function wrapSelection(params: {
-	textarea: HTMLTextAreaElement | null;
-	value: string;
-	onChange: (next: string) => void;
-	prefix: string;
-	suffix?: string;
 	placeholder?: string;
-}) {
-	const {
-		textarea,
-		value,
-		onChange,
-		prefix,
-		placeholder = "",
-		suffix = prefix,
-	} = params;
+	className?: string;
+	height?: number;
+	onUploadImage?: (file: File) => Promise<{ url: string }>;
+};
 
-	if (!textarea) {
-		onChange(`${value}${prefix}${placeholder}${suffix}`);
-		return;
-	}
+const globalWithReact = globalThis as typeof globalThis & {
+	React?: typeof React;
+};
 
-	const start = textarea.selectionStart ?? 0;
-	const end = textarea.selectionEnd ?? start;
-	const selected = value.slice(start, end) || placeholder;
-	const inserted = `${prefix}${selected}${suffix}`;
-	const next = `${value.slice(0, start)}${inserted}${value.slice(end)}`;
-	onChange(next);
-
-	requestAnimationFrame(() => {
-		textarea.focus();
-		textarea.setSelectionRange(
-			start + prefix.length,
-			start + prefix.length + selected.length,
-		);
-	});
+if (!globalWithReact.React) {
+	globalWithReact.React = React;
 }
 
 export function MarkdownEditor({
@@ -114,367 +33,252 @@ export function MarkdownEditor({
 	onChange,
 	placeholder,
 	className,
-	heightClassName = "h-[620px]",
-	textareaRef,
+	height = 620,
 	onUploadImage,
-}: {
-	id: string;
-	value: string;
-	onChange: (next: string) => void;
-	placeholder?: string;
-	className?: string;
-	heightClassName?: string;
-	textareaRef?: React.Ref<HTMLTextAreaElement>;
-	onUploadImage?: (file: File) => Promise<{ url: string }>;
-}) {
-	const html = useMemo(() => renderMarkdown(value || ""), [value]);
-	const internalTextareaRef = useRef<HTMLTextAreaElement | null>(null);
-	const imageTriggerRef = useRef<HTMLButtonElement | null>(null);
-	const imagePopoverRef = useRef<HTMLDivElement | null>(null);
-
-	const [imagePopoverOpen, setImagePopoverOpen] = useState(false);
+}: MarkdownEditorProps) {
+	const editorRef = useRef<InstanceType<typeof MdEditor> | null>(null);
+	const fileInputRef = useRef<HTMLInputElement | null>(null);
+	const [isDesktop, setIsDesktop] = useState(() =>
+		typeof window === "undefined"
+			? true
+			: window.matchMedia("(min-width: 1024px)").matches,
+	);
+	const [imageDialogOpen, setImageDialogOpen] = useState(false);
+	const [imageDialogPromise, setImageDialogPromise] = useState<{
+		resolve: (value: { url: string; text?: string }) => void;
+		reject: (reason?: unknown) => void;
+	} | null>(null);
 	const [imageUrl, setImageUrl] = useState("");
 	const [imageAlt, setImageAlt] = useState("");
-	const [uploading, setUploading] = useState(false);
-	const [uploadError, setUploadError] = useState<string | null>(null);
+	const [uploadingImage, setUploadingImage] = useState(false);
+	const [imageError, setImageError] = useState<string | null>(null);
+
+	const handleImageUpload = useCallback<UploadFunc | undefined>(
+		onUploadImage
+			? async (file) => {
+					const result = await onUploadImage(file);
+					return result.url;
+				}
+			: undefined,
+		[onUploadImage],
+	);
 
 	useEffect(() => {
-		if (!imagePopoverOpen) return;
+		if (typeof window === "undefined") return;
+		const mediaQuery = window.matchMedia("(min-width: 1024px)");
+		const listener = (event: MediaQueryListEvent) => setIsDesktop(event.matches);
+		setIsDesktop(mediaQuery.matches);
+		if (typeof mediaQuery.addEventListener === "function") {
+			mediaQuery.addEventListener("change", listener);
+			return () => mediaQuery.removeEventListener("change", listener);
+		}
+		mediaQuery.addListener(listener);
+		return () => mediaQuery.removeListener(listener);
+	}, []);
 
-		const onPointerDown = (event: PointerEvent) => {
-			const target = event.target as Node | null;
-			if (!target) return;
-			if (imageTriggerRef.current?.contains(target)) return;
-			if (imagePopoverRef.current?.contains(target)) return;
-			setImagePopoverOpen(false);
-		};
+	const openImageDialog = useCallback(() => {
+		setImageUrl("");
+		setImageAlt("");
+		setImageError(null);
+		setImageDialogOpen(true);
+	}, []);
 
-		const onKeyDown = (event: KeyboardEvent) => {
-			if (event.key === "Escape") setImagePopoverOpen(false);
-		};
+	const closeImageDialog = useCallback(
+		(cancelled: boolean) => {
+			setImageDialogOpen(false);
+			if (cancelled) {
+				imageDialogPromise?.reject?.(new Error("Image insert cancelled"));
+			}
+			setImageDialogPromise(null);
+			setUploadingImage(false);
+		},
+		[imageDialogPromise],
+	);
 
-		document.addEventListener("pointerdown", onPointerDown);
-		document.addEventListener("keydown", onKeyDown);
-		return () => {
-			document.removeEventListener("pointerdown", onPointerDown);
-			document.removeEventListener("keydown", onKeyDown);
-		};
-	}, [imagePopoverOpen]);
+	const confirmImageDialog = useCallback(() => {
+		if (!imageUrl.trim()) {
+			setImageError("Please enter an image URL.");
+			return;
+		}
+		imageDialogPromise?.resolve({
+			url: imageUrl.trim(),
+			text: imageAlt.trim() || undefined,
+		});
+		closeImageDialog(false);
+	}, [imageAlt, imageDialogPromise, imageUrl, closeImageDialog]);
 
-	return (
-		<div className={cn("grid gap-4 lg:grid-cols-2", className)}>
-			<div className="space-y-2">
-				<div className="flex items-center justify-between gap-2">
-					<div className="text-xs font-medium text-muted-foreground">Write</div>
-					<div className="flex items-center gap-1">
-						<ToolbarButton
-							label="Bold"
-							onClick={() =>
-								wrapSelection({
-									textarea: internalTextareaRef.current,
-									value,
-									onChange,
-									prefix: "**",
-									placeholder: "bold",
-								})
-							}
-						>
-							<Bold className="h-4 w-4" />
-						</ToolbarButton>
-						<ToolbarButton
-							label="Italic"
-							onClick={() =>
-								wrapSelection({
-									textarea: internalTextareaRef.current,
-									value,
-									onChange,
-									prefix: "*",
-									placeholder: "italic",
-								})
-							}
-						>
-							<Italic className="h-4 w-4" />
-						</ToolbarButton>
-						<ToolbarButton
-							label="Strike"
-							onClick={() =>
-								wrapSelection({
-									textarea: internalTextareaRef.current,
-									value,
-									onChange,
-									prefix: "~~",
-									placeholder: "strike",
-								})
-							}
-						>
-							<Strikethrough className="h-4 w-4" />
-						</ToolbarButton>
-						<ToolbarButton
-							label="Inline code"
-							onClick={() =>
-								wrapSelection({
-									textarea: internalTextareaRef.current,
-									value,
-									onChange,
-									prefix: "`",
-									placeholder: "code",
-								})
-							}
-						>
-							<Code className="h-4 w-4" />
-						</ToolbarButton>
-						<ToolbarButton
-							label="Heading"
-							onClick={() =>
-								insertBlock({
-									textarea: internalTextareaRef.current,
-									value,
-									onChange,
-									block: "## Heading",
-								})
-							}
-						>
-							<Heading2 className="h-4 w-4" />
-						</ToolbarButton>
-						<ToolbarButton
-							label="Quote"
-							onClick={() =>
-								insertBlock({
-									textarea: internalTextareaRef.current,
-									value,
-									onChange,
-									block: "> Quote",
-								})
-							}
-						>
-							<Quote className="h-4 w-4" />
-						</ToolbarButton>
-						<ToolbarButton
-							label="List"
-							onClick={() =>
-								insertBlock({
-									textarea: internalTextareaRef.current,
-									value,
-									onChange,
-									block: "- Item",
-								})
-							}
-						>
-							<List className="h-4 w-4" />
-						</ToolbarButton>
-						<ToolbarButton
-							label="Ordered list"
-							onClick={() =>
-								insertBlock({
-									textarea: internalTextareaRef.current,
-									value,
-									onChange,
-									block: "1. Item",
-								})
-							}
-						>
-							<ListOrdered className="h-4 w-4" />
-						</ToolbarButton>
-						<ToolbarButton
-							label="Link"
-							onClick={() =>
-								wrapSelection({
-									textarea: internalTextareaRef.current,
-									value,
-									onChange,
-									prefix: "[",
-									suffix: "](https://)",
-									placeholder: "link",
-								})
-							}
-						>
-							<LinkIcon className="h-4 w-4" />
-						</ToolbarButton>
+	const handleCustomImageUpload = useCallback(() => {
+		return new Promise<{ url: string; text?: string }>((resolve, reject) => {
+			setImageDialogPromise({ resolve, reject });
+			openImageDialog();
+		});
+	}, [openImageDialog]);
 
-						<div className="relative">
-							<ToolbarButton
-								label="Image"
-								onClick={() => setImagePopoverOpen((v) => !v)}
-								buttonRef={imageTriggerRef}
-							>
-								<ImageIcon className="h-4 w-4" />
-							</ToolbarButton>
-							{imagePopoverOpen ? (
-								<div
-									ref={imagePopoverRef}
-									className="absolute right-0 top-full z-50 mt-2 w-[320px] rounded-md border border-border bg-popover p-3 text-popover-foreground shadow-lg"
-								>
-									<div className="space-y-3">
-										<div className="space-y-2">
-											<div className="text-xs font-medium text-muted-foreground">
-												Image URL
-											</div>
-											<Input
-												value={imageUrl}
-												onChange={(e) => setImageUrl(e.target.value)}
-												placeholder="https://..."
-												className="h-8"
-											/>
-										</div>
+	const handleImageFileChange = useCallback(
+		async (event: React.ChangeEvent<HTMLInputElement>) => {
+			const file = event.target.files?.[0];
+			event.target.value = "";
+			if (!file) return;
+			if (!onUploadImage) {
+				setImageError("Image upload is disabled.");
+				return;
+			}
+			setImageError(null);
+			setUploadingImage(true);
+			try {
+				const result = await onUploadImage(file);
+				setImageUrl(result.url);
+				if (!imageAlt.trim()) setImageAlt(file.name);
+			} catch (error) {
+				setImageError(
+					error instanceof Error ? error.message : "Upload failed. Try again.",
+				);
+			} finally {
+				setUploadingImage(false);
+			}
+		},
+		[imageAlt, onUploadImage],
+	);
 
-										<div className="space-y-2">
-											<div className="text-xs font-medium text-muted-foreground">
-												Alt text
-											</div>
-											<Input
-												value={imageAlt}
-												onChange={(e) => setImageAlt(e.target.value)}
-												placeholder="image"
-												className="h-8"
-											/>
-										</div>
+	const imageDialog = useMemo(() => {
+		if (!imageDialogOpen) return null;
+		return (
+			<div className="markdown-editor__dialog fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+				<div className="w-full max-w-md space-y-5 rounded-2xl border border-border bg-card p-6 shadow-2xl">
+					<div className="space-y-2">
+						<h3 className="text-lg font-semibold">Insert image</h3>
+						<p className="text-sm text-muted-foreground">
+							Paste a URL or upload a file to embed into your article.
+						</p>
+					</div>
 
-										<div className="flex items-center justify-end gap-2">
-											{onUploadImage ? (
-												<>
-													<input
-														type="file"
-														accept="image/*"
-														className="hidden"
-														id={`${id}-image-upload`}
-														onChange={async (e) => {
-															const file = e.target.files?.[0];
-															e.target.value = "";
-															if (!file) return;
-															setUploadError(null);
-															setUploading(true);
-															try {
-																const res = await onUploadImage(file);
-																const markdown = `![${imageAlt.trim() || file.name}](${res.url})`;
-																insertAtSelection({
-																	textarea: internalTextareaRef.current,
-																	value,
-																	onChange,
-																	text: markdown,
-																});
-																setImagePopoverOpen(false);
-															} catch (err) {
-																setUploadError(
-																	err instanceof Error
-																		? err.message
-																		: "Upload failed",
-																);
-															} finally {
-																setUploading(false);
-															}
-														}}
-													/>
-													<Button
-														type="button"
-														variant="outline"
-														size="sm"
-														disabled={uploading}
-														onClick={() =>
-															document
-																.getElementById(`${id}-image-upload`)
-																?.click()
-														}
-													>
-														{uploading ? "Uploading..." : "Upload"}
-													</Button>
-												</>
-											) : null}
-
-											<Button
-												type="button"
-												size="sm"
-												variant="secondary"
-												disabled={!imageUrl.trim()}
-												onClick={() => {
-													const markdown = `![${imageAlt.trim() || "image"}](${imageUrl.trim()})`;
-													insertAtSelection({
-														textarea: internalTextareaRef.current,
-														value,
-														onChange,
-														text: markdown,
-													});
-													setImagePopoverOpen(false);
-												}}
-											>
-												Insert
-											</Button>
-										</div>
-
-										{uploadError ? (
-											<div className="text-xs text-destructive">
-												{uploadError}
-											</div>
-										) : null}
-									</div>
-								</div>
-							) : null}
+					<div className="space-y-3">
+						<div className="space-y-1.5">
+							<label className="text-xs font-medium text-muted-foreground">
+								Image URL
+							</label>
+							<Input
+								value={imageUrl}
+								onChange={(event) => {
+									setImageUrl(event.target.value);
+									setImageError(null);
+								}}
+								placeholder="https://example.com/image.png"
+							/>
 						</div>
+
+						<div className="space-y-1.5">
+							<label className="text-xs font-medium text-muted-foreground">
+								Alt text
+							</label>
+							<Input
+								value={imageAlt}
+								onChange={(event) => setImageAlt(event.target.value)}
+								placeholder="Optional description"
+							/>
+						</div>
+
+						{onUploadImage ? (
+							<div className="flex items-center gap-3">
+								<input
+									ref={fileInputRef}
+									type="file"
+									accept="image/*"
+									className="hidden"
+									onChange={handleImageFileChange}
+								/>
+								<Button
+									type="button"
+									variant="outline"
+									size="sm"
+									disabled={uploadingImage}
+									onClick={() => fileInputRef.current?.click()}
+								>
+									{uploadingImage ? "Uploading..." : "Upload image"}
+								</Button>
+								{uploadingImage ? (
+									<span className="text-xs text-muted-foreground">
+										Please wait...
+									</span>
+								) : null}
+							</div>
+						) : null}
+
+						{imageError ? (
+							<div className="text-sm text-destructive">{imageError}</div>
+						) : null}
+					</div>
+
+					<div className="flex items-center justify-end gap-3">
+						<Button
+							type="button"
+							variant="ghost"
+							onClick={() => closeImageDialog(true)}
+						>
+							Cancel
+						</Button>
+						<Button type="button" onClick={confirmImageDialog}>
+							Insert
+						</Button>
 					</div>
 				</div>
-				<Textarea
-					id={id}
-					ref={(el) => {
-						internalTextareaRef.current = el;
-						setRef(textareaRef, el);
-					}}
-					value={value}
-					onChange={(e) => onChange(e.target.value)}
-					placeholder={placeholder}
-					className={cn(
-						heightClassName,
-						"resize-none font-mono text-sm leading-6",
-					)}
-					spellCheck={false}
-				/>
 			</div>
+		);
+	}, [
+		closeImageDialog,
+		confirmImageDialog,
+		handleImageFileChange,
+		imageAlt,
+		imageDialogOpen,
+		imageError,
+		imageUrl,
+		onUploadImage,
+		uploadingImage,
+	]);
 
-			<div className="space-y-2">
-				<div className="text-xs font-medium text-muted-foreground">Preview</div>
-				<div
-					className={cn(
-						heightClassName,
-						"overflow-auto rounded-md border border-input bg-background p-4 text-foreground",
-					)}
-				>
-					{value.trim().length === 0 ? (
-						<div className="text-sm text-muted-foreground">
-							Start typing to see the preview.
-						</div>
-					) : (
-						<div
-							className="prose max-w-none"
-							dangerouslySetInnerHTML={{ __html: html }}
-						/>
-					)}
-				</div>
-			</div>
-		</div>
-	);
-}
-
-function ToolbarButton({
-	children,
-	label,
-	onClick,
-	buttonRef,
-}: {
-	children: React.ReactNode;
-	label: string;
-	onClick: () => void;
-	buttonRef?: React.Ref<HTMLButtonElement>;
-}) {
 	return (
-		<Button
-			type="button"
-			variant="ghost"
-			size="icon"
-			onClick={onClick}
-			ref={buttonRef}
-			aria-label={label}
-			title={label}
-			className="h-8 w-8"
-		>
-			{children}
-		</Button>
+		<div className={cn("markdown-editor", className)}>
+			<MdEditor
+				id={id}
+				className="markdown-editor__instance"
+				value={value}
+				style={{ height }}
+				placeholder={placeholder}
+				renderHTML={(text) => renderMarkdown(text)}
+				markdownClass="markdown-editor__md"
+				htmlClass="markdown-editor__preview prose max-w-none"
+				ref={editorRef}
+				view={
+					isDesktop
+						? { menu: true, md: true, html: true }
+						: { menu: true, md: true, html: false }
+				}
+				canView={
+					isDesktop
+						? {
+								menu: true,
+								md: true,
+								html: true,
+								both: true,
+								fullScreen: true,
+								hideMenu: true,
+							}
+						: {
+								menu: true,
+								md: true,
+								html: true,
+								both: false,
+								fullScreen: true,
+								hideMenu: true,
+							}
+				}
+				shortcuts
+				allowPasteImage={Boolean(onUploadImage)}
+				onImageUpload={handleImageUpload}
+				onCustomImageUpload={handleCustomImageUpload}
+				onChange={({ text }) => onChange(text)}
+			/>
+			{imageDialog}
+		</div>
 	);
 }

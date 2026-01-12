@@ -281,7 +281,7 @@ function AdminEditArticlePage() {
 								value={content}
 								onChange={setContent}
 								placeholder="# Hello world"
-								heightClassName="h-[720px]"
+								height={720}
 								onUploadImage={uploadImage}
 							/>
 						</div>

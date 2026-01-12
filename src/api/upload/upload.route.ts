@@ -16,7 +16,7 @@ const ALLOWED_IMAGE_TYPES = [
 ];
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024;
-const BUCKET_NAME = import.meta.env.SUPABASE_BUCKET_NAME;
+const BUCKET_NAME = process.env.SUPABASE_BUCKET_NAME;
 
 function generateSafeFileName(originalName: string): string {
 	const lastDotIndex = originalName.lastIndexOf(".");
