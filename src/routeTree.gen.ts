@@ -20,6 +20,7 @@ import { Route as ArticleIdRouteImport } from './routes/article/$id'
 import { Route as ApiSplatRouteImport } from './routes/api/$'
 import { Route as AdminTagsRouteImport } from './routes/admin/tags'
 import { Route as AdminProfileRouteImport } from './routes/admin/profile'
+import { Route as AdminMetaRouteImport } from './routes/admin/meta'
 import { Route as AdminLoginRouteImport } from './routes/admin/login'
 import { Route as AdminLinksRouteImport } from './routes/admin/links'
 import { Route as AdminCategoriesRouteImport } from './routes/admin/categories'
@@ -88,6 +89,11 @@ const AdminTagsRoute = AdminTagsRouteImport.update({
 const AdminProfileRoute = AdminProfileRouteImport.update({
   id: '/admin/profile',
   path: '/admin/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminMetaRoute = AdminMetaRouteImport.update({
+  id: '/admin/meta',
+  path: '/admin/meta',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminLoginRoute = AdminLoginRouteImport.update({
@@ -170,6 +176,7 @@ export interface FileRoutesByFullPath {
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/links': typeof AdminLinksRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/meta': typeof AdminMetaRoute
   '/admin/profile': typeof AdminProfileRoute
   '/admin/tags': typeof AdminTagsRoute
   '/api/$': typeof ApiSplatRoute
@@ -197,6 +204,7 @@ export interface FileRoutesByTo {
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/links': typeof AdminLinksRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/meta': typeof AdminMetaRoute
   '/admin/profile': typeof AdminProfileRoute
   '/admin/tags': typeof AdminTagsRoute
   '/api/$': typeof ApiSplatRoute
@@ -225,6 +233,7 @@ export interface FileRoutesById {
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/links': typeof AdminLinksRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/meta': typeof AdminMetaRoute
   '/admin/profile': typeof AdminProfileRoute
   '/admin/tags': typeof AdminTagsRoute
   '/api/$': typeof ApiSplatRoute
@@ -254,6 +263,7 @@ export interface FileRouteTypes {
     | '/admin/categories'
     | '/admin/links'
     | '/admin/login'
+    | '/admin/meta'
     | '/admin/profile'
     | '/admin/tags'
     | '/api/$'
@@ -281,6 +291,7 @@ export interface FileRouteTypes {
     | '/admin/categories'
     | '/admin/links'
     | '/admin/login'
+    | '/admin/meta'
     | '/admin/profile'
     | '/admin/tags'
     | '/api/$'
@@ -308,6 +319,7 @@ export interface FileRouteTypes {
     | '/admin/categories'
     | '/admin/links'
     | '/admin/login'
+    | '/admin/meta'
     | '/admin/profile'
     | '/admin/tags'
     | '/api/$'
@@ -336,6 +348,7 @@ export interface RootRouteChildren {
   AdminCategoriesRoute: typeof AdminCategoriesRoute
   AdminLinksRoute: typeof AdminLinksRoute
   AdminLoginRoute: typeof AdminLoginRoute
+  AdminMetaRoute: typeof AdminMetaRoute
   AdminProfileRoute: typeof AdminProfileRoute
   AdminTagsRoute: typeof AdminTagsRoute
   ApiSplatRoute: typeof ApiSplatRoute
@@ -432,6 +445,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/profile'
       fullPath: '/admin/profile'
       preLoaderRoute: typeof AdminProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/meta': {
+      id: '/admin/meta'
+      path: '/admin/meta'
+      fullPath: '/admin/meta'
+      preLoaderRoute: typeof AdminMetaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/login': {
@@ -544,6 +564,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminCategoriesRoute: AdminCategoriesRoute,
   AdminLinksRoute: AdminLinksRoute,
   AdminLoginRoute: AdminLoginRoute,
+  AdminMetaRoute: AdminMetaRoute,
   AdminProfileRoute: AdminProfileRoute,
   AdminTagsRoute: AdminTagsRoute,
   ApiSplatRoute: ApiSplatRoute,

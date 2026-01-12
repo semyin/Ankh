@@ -4,6 +4,7 @@ import {
 	BookOpen,
 	CircleUserRound,
 	ExternalLink,
+	FileCode,
 	LayoutDashboard,
 	LayoutPanelLeft,
 	Link2,
@@ -86,6 +87,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 				{ to: "/admin/categories", label: "Categories", icon: BookOpen },
 				{ to: "/admin/tags", label: "Tags", icon: Tags },
 				{ to: "/admin/links", label: "Links", icon: Link2 },
+				{ to: "/admin/meta", label: "Meta", icon: FileCode },
 				{ to: "/admin/profile", label: "Profile", icon: CircleUserRound },
 			] satisfies NavItem[],
 		}),
@@ -358,9 +360,11 @@ function AdminBreadcrumbs({ pathname }: { pathname: string }) {
 					? "Tags"
 					: section === "links"
 						? "Links"
-						: section === "profile"
-							? "Profile"
-							: "";
+						: section === "meta"
+							? "Meta"
+							: section === "profile"
+								? "Profile"
+								: "";
 
 	if (sectionLabel) crumbs.push({ label: sectionLabel, to: `/admin/${section}` });
 

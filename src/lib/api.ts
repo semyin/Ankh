@@ -186,6 +186,14 @@ export function getProfile() {
 	return apiData<Profile>("/api/profile");
 }
 
+export function updateProfile(payload: Partial<Profile>) {
+	return apiData<Profile>("/api/profile", {
+		method: "PUT",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify(payload),
+	});
+}
+
 export function getCategories() {
 	return apiData<Category[]>("/api/categories");
 }
@@ -260,8 +268,8 @@ export function createMeta(payload: {
 	name: string | null;
 	property: string | null;
 	content: string | null;
-	resource_type: string;
-	resource_id: number;
+	resource_type?: string | null;
+	resource_id?: number | null;
 	is_default?: boolean;
 }) {
 	return apiData<Meta>("/api/meta", {
@@ -269,6 +277,10 @@ export function createMeta(payload: {
 		headers: { "content-type": "application/json" },
 		body: JSON.stringify({
 			...payload,
+			resource_type:
+				payload.resource_type === undefined ? null : payload.resource_type,
+			resource_id:
+				payload.resource_id === undefined ? null : payload.resource_id,
 			is_default: payload.is_default ?? false,
 		}),
 	});
