@@ -36,7 +36,6 @@ export function MarkdownEditor({
 	height = 620,
 	onUploadImage,
 }: MarkdownEditorProps) {
-	const editorRef = useRef<InstanceType<typeof MdEditor> | null>(null);
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
 	const [isDesktop, setIsDesktop] = useState(() =>
 		typeof window === "undefined"
@@ -247,7 +246,6 @@ export function MarkdownEditor({
 				renderHTML={(text) => renderMarkdown(text)}
 				markdownClass="markdown-editor__md"
 				htmlClass="markdown-editor__preview prose max-w-none"
-				ref={editorRef}
 				view={
 					isDesktop
 						? { menu: true, md: true, html: true }
