@@ -190,8 +190,58 @@ export function getCategories() {
 	return apiData<Category[]>("/api/categories");
 }
 
+export function createCategory(payload: {
+	name: string;
+	emoji?: string | null;
+	description?: string | null;
+}) {
+	return apiData<Category>("/api/categories", {
+		method: "POST",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify(payload),
+	});
+}
+
+export function updateCategory(
+	id: number,
+	payload: Partial<{ name: string; emoji: string | null; description: string | null }>,
+) {
+	return apiData<Category>(`/api/categories/${id}`, {
+		method: "PUT",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify(payload),
+	});
+}
+
+export function deleteCategory(id: number) {
+	return apiData<Category>(`/api/categories/${id}`, { method: "DELETE" });
+}
+
 export function getTags() {
 	return apiData<Tag[]>("/api/tags");
+}
+
+export function createTag(payload: { name: string; img_url?: string | null }) {
+	return apiData<Tag>("/api/tags", {
+		method: "POST",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify(payload),
+	});
+}
+
+export function updateTag(
+	id: number,
+	payload: Partial<{ name: string; img_url: string | null }>,
+) {
+	return apiData<Tag>(`/api/tags/${id}`, {
+		method: "PUT",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify(payload),
+	});
+}
+
+export function deleteTag(id: number) {
+	return apiData<Tag>(`/api/tags/${id}`, { method: "DELETE" });
 }
 
 export function getMeta(params?: {
@@ -248,6 +298,62 @@ export function deleteMeta(id: number) {
 
 export function getFriendLinks() {
 	return apiData<FriendLink[]>("/api/friend-links?is_visible=true");
+}
+
+export function getAdminFriendLinks(params?: { is_visible?: boolean }) {
+	const qs = new URLSearchParams();
+	if (params?.is_visible !== undefined) {
+		qs.set("is_visible", String(params.is_visible));
+	}
+	const path = qs.size ? `/api/friend-links?${qs}` : "/api/friend-links";
+	return apiData<FriendLink[]>(path);
+}
+
+export function createFriendLink(payload: {
+	name: string;
+	url: string;
+	description?: string | null;
+	avatar_url?: string | null;
+	is_visible?: boolean;
+	sort_weight?: number;
+	type?: string | null;
+}) {
+	return apiData<FriendLink>("/api/friend-links", {
+		method: "POST",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify(payload),
+	});
+}
+
+export function updateFriendLink(
+	id: number,
+	payload: Partial<{
+		name: string;
+		url: string;
+		description: string | null;
+		avatar_url: string | null;
+		is_visible: boolean;
+		sort_weight: number;
+		type: string | null;
+	}>,
+) {
+	return apiData<FriendLink>(`/api/friend-links/${id}`, {
+		method: "PUT",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify(payload),
+	});
+}
+
+export function deleteFriendLink(id: number) {
+	return apiData<FriendLink>(`/api/friend-links/${id}`, { method: "DELETE" });
+}
+
+export function setFriendLinkVisibility(id: number, is_visible: boolean) {
+	return apiData<FriendLink>(`/api/friend-links/${id}/visibility`, {
+		method: "PATCH",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify({ is_visible }),
+	});
 }
 
 export function getArticles() {

@@ -21,6 +21,7 @@ import { Route as ApiSplatRouteImport } from './routes/api/$'
 import { Route as AdminTagsRouteImport } from './routes/admin/tags'
 import { Route as AdminProfileRouteImport } from './routes/admin/profile'
 import { Route as AdminLoginRouteImport } from './routes/admin/login'
+import { Route as AdminLinksRouteImport } from './routes/admin/links'
 import { Route as AdminCategoriesRouteImport } from './routes/admin/categories'
 import { Route as AdminArticlesIndexRouteImport } from './routes/admin/articles/index'
 import { Route as DemoStartServerFuncsRouteImport } from './routes/demo/start.server-funcs'
@@ -94,6 +95,11 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
   path: '/admin/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminLinksRoute = AdminLinksRouteImport.update({
+  id: '/admin/links',
+  path: '/admin/links',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminCategoriesRoute = AdminCategoriesRouteImport.update({
   id: '/admin/categories',
   path: '/admin/categories',
@@ -162,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/links': typeof LinksRoute
   '/tags': typeof TagsRoute
   '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/links': typeof AdminLinksRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/profile': typeof AdminProfileRoute
   '/admin/tags': typeof AdminTagsRoute
@@ -188,6 +195,7 @@ export interface FileRoutesByTo {
   '/links': typeof LinksRoute
   '/tags': typeof TagsRoute
   '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/links': typeof AdminLinksRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/profile': typeof AdminProfileRoute
   '/admin/tags': typeof AdminTagsRoute
@@ -215,6 +223,7 @@ export interface FileRoutesById {
   '/links': typeof LinksRoute
   '/tags': typeof TagsRoute
   '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/links': typeof AdminLinksRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/profile': typeof AdminProfileRoute
   '/admin/tags': typeof AdminTagsRoute
@@ -243,6 +252,7 @@ export interface FileRouteTypes {
     | '/links'
     | '/tags'
     | '/admin/categories'
+    | '/admin/links'
     | '/admin/login'
     | '/admin/profile'
     | '/admin/tags'
@@ -269,6 +279,7 @@ export interface FileRouteTypes {
     | '/links'
     | '/tags'
     | '/admin/categories'
+    | '/admin/links'
     | '/admin/login'
     | '/admin/profile'
     | '/admin/tags'
@@ -295,6 +306,7 @@ export interface FileRouteTypes {
     | '/links'
     | '/tags'
     | '/admin/categories'
+    | '/admin/links'
     | '/admin/login'
     | '/admin/profile'
     | '/admin/tags'
@@ -322,6 +334,7 @@ export interface RootRouteChildren {
   LinksRoute: typeof LinksRoute
   TagsRoute: typeof TagsRoute
   AdminCategoriesRoute: typeof AdminCategoriesRoute
+  AdminLinksRoute: typeof AdminLinksRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminProfileRoute: typeof AdminProfileRoute
   AdminTagsRoute: typeof AdminTagsRoute
@@ -428,6 +441,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/links': {
+      id: '/admin/links'
+      path: '/admin/links'
+      fullPath: '/admin/links'
+      preLoaderRoute: typeof AdminLinksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/categories': {
       id: '/admin/categories'
       path: '/admin/categories'
@@ -522,6 +542,7 @@ const rootRouteChildren: RootRouteChildren = {
   LinksRoute: LinksRoute,
   TagsRoute: TagsRoute,
   AdminCategoriesRoute: AdminCategoriesRoute,
+  AdminLinksRoute: AdminLinksRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminProfileRoute: AdminProfileRoute,
   AdminTagsRoute: AdminTagsRoute,
