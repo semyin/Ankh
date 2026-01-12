@@ -1,9 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Pencil, Search as SearchIcon, Trash2, X as ClearIcon } from "lucide-react";
 import { AdminPageHeader, AdminSurface } from "@/components/admin/AdminLayout";
-import { Button, buttonClassName } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
 	Table,
 	TableBody,
@@ -20,7 +22,6 @@ import {
 	getCategories,
 	updateCategory,
 } from "@/lib/api";
-import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/categories")({
 	component: CategoriesAdminPage,
@@ -42,8 +43,10 @@ const pageSize = 10;
 
 function CategoriesAdminPage() {
 	const queryClient = useQueryClient();
+	const [searchInput, setSearchInput] = useState("");
 	const [search, setSearch] = useState("");
 	const [page, setPage] = useState(1);
+	const [pageInput, setPageInput] = useState("1");
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [editing, setEditing] = useState<Category | null>(null);
 	const [form, setForm] = useState<FormState>(emptyForm);
@@ -61,12 +64,29 @@ function CategoriesAdminPage() {
 		return categories.filter((cat) => cat.name.toLowerCase().includes(q));
 	}, [categories, search]);
 
-	const maxPage = Math.max(1, Math.ceil(filtered.length / pageSize));
-	const safePage = Math.min(page, maxPage);
+	const total = filtered.length;
+	const totalPages = Math.max(1, Math.ceil(total / pageSize));
+	const currentPage = Math.min(page, totalPages);
 	const paged = useMemo(
-		() => filtered.slice((safePage - 1) * pageSize, safePage * pageSize),
-		[filtered, safePage],
+		() =>
+			filtered.slice(
+				(currentPage - 1) * pageSize,
+				currentPage * pageSize,
+			),
+		[filtered, currentPage],
 	);
+
+	const setPageAndInput = (next: number) => {
+		setPage(next);
+		setPageInput(String(next));
+	};
+
+	useEffect(() => {
+		if (page > totalPages) {
+			setPage(totalPages);
+			setPageInput(String(totalPages));
+		}
+	}, [page, totalPages]);
 
 	const openDialogForCreate = () => {
 		setEditing(null);
@@ -136,6 +156,32 @@ function CategoriesAdminPage() {
 	const isMutating =
 		createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
 
+	const isDirty = useMemo(() => {
+		return searchInput.trim() !== search;
+	}, [search, searchInput]);
+
+	const canClear = useMemo(() => {
+		return searchInput.trim().length > 0 || search.length > 0;
+	}, [search, searchInput]);
+
+	const applyFilters = () => {
+		setSearch(searchInput.trim());
+		setPageAndInput(1);
+	};
+
+	const clearFilters = () => {
+		setSearchInput("");
+		setSearch("");
+		setPageAndInput(1);
+	};
+
+	const onGoToPage = () => {
+		const parsed = Number(pageInput);
+		if (!Number.isFinite(parsed)) return;
+		const next = Math.max(1, Math.min(totalPages, Math.trunc(parsed)));
+		setPageAndInput(next);
+	};
+
 	return (
 		<div className="space-y-6">
 			<AdminPageHeader
@@ -148,112 +194,214 @@ function CategoriesAdminPage() {
 				}
 			/>
 
-			<AdminSurface innerClassName="p-6 space-y-4">
-				<div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-					<Input
-						placeholder="Search categories..."
-						value={search}
-						onChange={(event) => {
-							setSearch(event.target.value);
-							setPage(1);
-						}}
-						className="w-full md:w-64"
-					/>
-					<div className="text-sm text-muted-foreground">
-						Total: {filtered.length} categories
+			<AdminSurface innerClassName="p-6">
+				<div className="space-y-6">
+					<div className="flex flex-wrap items-center justify-between gap-3">
+						<div className="text-sm font-medium">Filters</div>
+						<div className="flex flex-wrap items-center justify-end gap-2">
+							<Button
+								type="button"
+								variant="secondary"
+								size="sm"
+								onClick={applyFilters}
+								disabled={!isDirty}
+							>
+								<SearchIcon className="h-4 w-4" />
+								Search
+							</Button>
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={clearFilters}
+								disabled={!canClear}
+							>
+								<ClearIcon className="h-4 w-4" />
+								Clear
+							</Button>
+						</div>
+					</div>
+					<div className="grid gap-6 sm:grid-cols-2">
+						<div className="flex flex-col gap-5">
+							<Label htmlFor="category-search">Search</Label>
+							<Input
+								id="category-search"
+								placeholder="Search categories..."
+								value={searchInput}
+								onChange={(event) => {
+									setSearchInput(event.target.value);
+								}}
+								onKeyDown={(event) => {
+									if (event.key === "Enter") applyFilters();
+								}}
+							/>
+						</div>
+					</div>
+				</div>
+			</AdminSurface>
+
+			<AdminSurface innerClassName="p-6">
+				<div className="flex flex-wrap items-end justify-between gap-4">
+					<div className="space-y-1">
+						<div className="text-sm font-medium">List</div>
+						{listQuery.isPending ? (
+							<div className="text-sm text-muted-foreground">Loading...</div>
+						) : listQuery.error ? (
+							<div className="text-sm text-destructive">
+								{listQuery.error instanceof Error
+									? listQuery.error.message
+									: "Load failed"}
+							</div>
+						) : null}
+					</div>
+					<div className="ml-auto flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
+						<div className="text-sm text-muted-foreground whitespace-nowrap">
+							<span className="font-medium text-foreground">Total: {total}</span>{" "}
+							<span className="text-muted-foreground" aria-hidden>
+								|
+							</span>{" "}
+							<span className="font-medium text-foreground">
+								Page {currentPage}/{totalPages}
+							</span>
+						</div>
+						<div className="flex flex-wrap items-center justify-end gap-3">
+							<div className="flex items-center gap-2 whitespace-nowrap">
+								<Label
+									htmlFor="categories-page"
+									className="text-xs text-muted-foreground whitespace-nowrap"
+								>
+									Go to
+								</Label>
+								<Input
+									id="categories-page"
+									type="number"
+									min={1}
+									max={totalPages}
+									className="w-20 sm:w-24"
+									value={pageInput}
+									onChange={(event) => setPageInput(event.target.value)}
+									onKeyDown={(event) => {
+										if (event.key === "Enter") onGoToPage();
+									}}
+								/>
+								<Button
+									variant="secondary"
+									size="sm"
+									type="button"
+									onClick={onGoToPage}
+								>
+									Go
+								</Button>
+							</div>
+							<div className="flex items-center gap-2 whitespace-nowrap">
+								<Button
+									type="button"
+									variant="outline"
+									size="sm"
+									disabled={currentPage === 1}
+									onClick={() => setPageAndInput(Math.max(1, currentPage - 1))}
+								>
+									Prev
+								</Button>
+								<Button
+									type="button"
+									variant="outline"
+									size="sm"
+									disabled={currentPage === totalPages}
+									onClick={() =>
+										setPageAndInput(Math.min(totalPages, currentPage + 1))
+									}
+								>
+									Next
+								</Button>
+							</div>
+						</div>
 					</div>
 				</div>
 
-				<div className="space-y-3">
-					<div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
-						<div>
-							<span className="font-medium text-foreground">
-								Total: {filtered.length}
-							</span>{" "}
-							<span aria-hidden>|</span>{" "}
-							<span className="font-medium text-foreground">
-								Page {safePage}/{maxPage}
-							</span>
-						</div>
-						<div className="space-x-2">
-							<Button
-								type="button"
-								variant="outline"
-								size="sm"
-								disabled={safePage === 1}
-								onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-							>
-								Prev
-							</Button>
-							<Button
-								type="button"
-								variant="outline"
-								size="sm"
-								disabled={safePage === maxPage}
-								onClick={() => setPage((prev) => Math.min(maxPage, prev + 1))}
-							>
-								Next
-							</Button>
-						</div>
-					</div>
-					<div className="rounded-lg border border-border">
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead className="w-[80px]">Emoji</TableHead>
-									<TableHead>Name</TableHead>
-									<TableHead className="hidden md:table-cell">Description</TableHead>
-									<TableHead className="text-right">Actions</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{paged.map((cat) => (
-									<TableRow key={cat.id}>
-										<TableCell>
-											<span className="text-2xl">{cat.emoji ?? "—"}</span>
-										</TableCell>
-										<TableCell>
-											<div className="font-medium">{cat.name}</div>
-											<div className="text-xs text-muted-foreground">#{cat.id}</div>
-										</TableCell>
-										<TableCell className="hidden md:table-cell text-sm text-muted-foreground">
-											{cat.description ?? "—"}
-										</TableCell>
-										<TableCell className="text-right space-x-2">
-											<button
+				<div className="mt-5 overflow-hidden rounded-lg border border-border bg-background">
+					<Table>
+						<TableHeader>
+							<TableRow>
+								<TableHead className="w-[80px]">Emoji</TableHead>
+								<TableHead>Name</TableHead>
+								<TableHead className="hidden md:table-cell">Description</TableHead>
+								<TableHead className="text-right">Actions</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{paged.map((cat) => (
+								<TableRow key={cat.id}>
+									<TableCell>
+										<span className="text-2xl">{cat.emoji ?? "-"}</span>
+									</TableCell>
+									<TableCell>
+										<div className="font-medium">{cat.name}</div>
+										<div className="text-xs text-muted-foreground">#{cat.id}</div>
+									</TableCell>
+									<TableCell className="hidden md:table-cell text-sm text-muted-foreground">
+										{cat.description ?? "-"}
+									</TableCell>
+									<TableCell className="text-right">
+										<div className="hidden justify-end gap-2 sm:flex">
+											<Button
+												variant="outline"
+												size="sm"
 												type="button"
-												className={buttonClassName({ variant: "outline", size: "sm" })}
 												onClick={() => openDialogForEdit(cat)}
 											>
+												<Pencil className="h-4 w-4" />
 												Edit
-											</button>
-											<button
+											</Button>
+											<Button
+												variant="destructive"
+												size="sm"
 												type="button"
-												className={cn(
-													buttonClassName({ variant: "ghost", size: "sm" }),
-													"text-destructive",
-												)}
 												onClick={() => deleteMutation.mutate(cat.id)}
 												disabled={deleteMutation.isPending}
 											>
+												<Trash2 className="h-4 w-4" />
 												Delete
-											</button>
-										</TableCell>
-									</TableRow>
-								))}
-								{paged.length === 0 ? (
-									<TableRow>
-										<TableCell
-											colSpan={4}
-											className="py-8 text-center text-sm text-muted-foreground"
-										>
-											{listQuery.isPending ? "Loading..." : "No categories match your filters."}
-										</TableCell>
-									</TableRow>
-								) : null}
-							</TableBody>
-						</Table>
-					</div>
+											</Button>
+										</div>
+										<div className="flex justify-end gap-2 sm:hidden">
+											<Button
+												variant="outline"
+												size="icon"
+												type="button"
+												onClick={() => openDialogForEdit(cat)}
+												aria-label="Edit"
+											>
+												<Pencil className="h-4 w-4" />
+											</Button>
+											<Button
+												variant="destructive"
+												size="icon"
+												type="button"
+												onClick={() => deleteMutation.mutate(cat.id)}
+												disabled={deleteMutation.isPending}
+												aria-label="Delete"
+											>
+												<Trash2 className="h-4 w-4" />
+											</Button>
+										</div>
+									</TableCell>
+								</TableRow>
+							))}
+							{paged.length === 0 ? (
+								<TableRow>
+									<TableCell
+										colSpan={4}
+										className="py-8 text-center text-sm text-muted-foreground"
+									>
+										{listQuery.isPending
+											? "Loading..."
+											: "No categories match your filters."}
+									</TableCell>
+								</TableRow>
+							) : null}
+						</TableBody>
+					</Table>
 				</div>
 			</AdminSurface>
 

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { Search as SearchIcon, X as ClearIcon } from "lucide-react";
 import { AdminPageHeader, AdminSurface } from "@/components/admin/AdminLayout";
 import { Button, buttonClassName } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +41,7 @@ const pageSize = 12;
 
 function TagsAdminPage() {
 	const queryClient = useQueryClient();
+	const [searchInput, setSearchInput] = useState("");
 	const [search, setSearch] = useState("");
 	const [page, setPage] = useState(1);
 	const [pageInput, setPageInput] = useState("1");
@@ -146,6 +148,25 @@ function TagsAdminPage() {
 	const isMutating =
 		createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
 
+	const isDirty = useMemo(() => {
+		return searchInput.trim() !== search;
+	}, [search, searchInput]);
+
+	const canClear = useMemo(() => {
+		return searchInput.trim().length > 0 || search.length > 0;
+	}, [search, searchInput]);
+
+	const applyFilters = () => {
+		setSearch(searchInput.trim());
+		setPageAndInput(1);
+	};
+
+	const clearFilters = () => {
+		setSearchInput("");
+		setSearch("");
+		setPageAndInput(1);
+	};
+
 	const onGoToPage = () => {
 		const parsed = Number(pageInput);
 		if (!Number.isFinite(parsed)) return;
@@ -169,17 +190,41 @@ function TagsAdminPage() {
 				<div className="space-y-6">
 					<div className="flex flex-wrap items-center justify-between gap-3">
 						<div className="text-sm font-medium">Filters</div>
-						<div className="text-sm text-muted-foreground">
-							Search tags by name.
+						<div className="flex flex-wrap items-center justify-end gap-2">
+							<Button
+								type="button"
+								variant="secondary"
+								size="sm"
+								onClick={applyFilters}
+								disabled={!isDirty}
+							>
+								<SearchIcon className="h-4 w-4" />
+								Search
+							</Button>
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={clearFilters}
+								disabled={!canClear}
+							>
+								<ClearIcon className="h-4 w-4" />
+								Clear
+							</Button>
 						</div>
+					</div>
+					<div className="text-sm text-muted-foreground">
+						Search tags by name, then apply filters.
 					</div>
 					<div className="grid gap-6 sm:grid-cols-2">
 						<Input
 							placeholder="Search tags..."
-							value={search}
+							value={searchInput}
 							onChange={(event) => {
-								setSearch(event.target.value);
-								setPageAndInput(1);
+								setSearchInput(event.target.value);
+							}}
+							onKeyDown={(event) => {
+								if (event.key === "Enter") applyFilters();
 							}}
 						/>
 					</div>

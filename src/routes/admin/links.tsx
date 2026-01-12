@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { Search as SearchIcon, X as ClearIcon } from "lucide-react";
 import { AdminPageHeader, AdminSurface } from "@/components/admin/AdminLayout";
 import { Button, buttonClassName } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,7 +55,9 @@ const pageSize = 10;
 
 function AdminLinksPage() {
 	const queryClient = useQueryClient();
+	const [searchInput, setSearchInput] = useState("");
 	const [search, setSearch] = useState("");
+	const [visibilityFilterInput, setVisibilityFilterInput] = useState<"all" | "visible" | "hidden">("all");
 	const [visibilityFilter, setVisibilityFilter] = useState<"all" | "visible" | "hidden">("all");
 	const [page, setPage] = useState(1);
 	const [pageInput, setPageInput] = useState("1");
@@ -208,6 +211,36 @@ function AdminLinksPage() {
 		updateMutation.isPending ||
 		deleteMutation.isPending;
 
+	const isDirty = useMemo(() => {
+		return (
+			searchInput.trim() !== search ||
+			visibilityFilterInput !== visibilityFilter
+		);
+	}, [search, searchInput, visibilityFilter, visibilityFilterInput]);
+
+	const canClear = useMemo(() => {
+		return (
+			searchInput.trim().length > 0 ||
+			search.length > 0 ||
+			visibilityFilterInput !== "all" ||
+			visibilityFilter !== "all"
+		);
+	}, [search, searchInput, visibilityFilter, visibilityFilterInput]);
+
+	const applyFilters = () => {
+		setSearch(searchInput.trim());
+		setVisibilityFilter(visibilityFilterInput);
+		setPageAndInput(1);
+	};
+
+	const clearFilters = () => {
+		setSearchInput("");
+		setSearch("");
+		setVisibilityFilterInput("all");
+		setVisibilityFilter("all");
+		setPageAndInput(1);
+	};
+
 	const onGoToPage = () => {
 		const parsed = Number(pageInput);
 		if (!Number.isFinite(parsed)) return;
@@ -231,9 +264,31 @@ function AdminLinksPage() {
 				<div className="space-y-6">
 					<div className="flex flex-wrap items-center justify-between gap-3">
 						<div className="text-sm font-medium">Filters</div>
-						<div className="text-sm text-muted-foreground">
-							Search by name or description, and filter by visibility.
+						<div className="flex flex-wrap items-center justify-end gap-2">
+							<Button
+								type="button"
+								variant="secondary"
+								size="sm"
+								onClick={applyFilters}
+								disabled={!isDirty}
+							>
+								<SearchIcon className="h-4 w-4" />
+								Search
+							</Button>
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={clearFilters}
+								disabled={!canClear}
+							>
+								<ClearIcon className="h-4 w-4" />
+								Clear
+							</Button>
 						</div>
+					</div>
+					<div className="text-sm text-muted-foreground">
+						Search by name or description, and filter by visibility, then apply the filters.
 					</div>
 					<div className="grid gap-6 lg:grid-cols-2">
 						<div className="flex flex-col gap-5">
@@ -241,21 +296,22 @@ function AdminLinksPage() {
 							<Input
 								id="links-search"
 								placeholder="Search links..."
-								value={search}
+								value={searchInput}
 								onChange={(event) => {
-									setSearch(event.target.value);
-									setPageAndInput(1);
+									setSearchInput(event.target.value);
+								}}
+								onKeyDown={(event) => {
+									if (event.key === "Enter") applyFilters();
 								}}
 							/>
 						</div>
 						<div className="flex flex-col gap-5">
 							<Label>Visibility</Label>
 							<SelectMenu
-								value={visibilityFilter}
+								value={visibilityFilterInput}
 								onValueChange={(value) => {
 									const next = value as "all" | "visible" | "hidden";
-									setVisibilityFilter(next);
-									setPageAndInput(1);
+									setVisibilityFilterInput(next);
 								}}
 								options={[
 									{ value: "all", label: "All links" },
