@@ -5,17 +5,20 @@ import {
 	CircleUserRound,
 	ExternalLink,
 	FileCode,
+	Home,
 	LayoutDashboard,
 	LayoutPanelLeft,
 	Link2,
 	LogOut,
 	Maximize2,
+	Menu,
 	Minimize2,
 	Moon,
 	NotebookPen,
 	RefreshCcw,
 	Sun,
 	Tags,
+	X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { getMe, logout } from "@/lib/api";
@@ -106,6 +109,11 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 			return next;
 		});
 	};
+
+	const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+	useEffect(() => {
+		setIsMobileNavOpen(false);
+	}, [pathname]);
 
 	const [isFullscreen, setIsFullscreen] = useState(false);
 	useEffect(() => {
@@ -198,21 +206,41 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 				<div className="flex-1 flex flex-col">
 					<header className="h-14 border-b border-border bg-background">
 						<div className="h-full px-4 md:px-8 flex items-center justify-between">
-							<div className="flex items-center gap-3 min-w-0">
-								<Button
-									type="button"
-									variant="ghost"
-									size="icon"
-									onClick={toggleCollapsed}
-									title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-									className="hidden md:inline-flex"
-								>
-									<LayoutPanelLeft className="h-4 w-4" />
-								</Button>
+							<div className="flex items-center gap-2 min-w-0">
+								<div className="md:hidden">
+									<Button
+										type="button"
+										variant="ghost"
+										size="icon"
+										onClick={() => setIsMobileNavOpen((prev) => !prev)}
+										aria-label={isMobileNavOpen ? "Close menu" : "Open menu"}
+									>
+										{isMobileNavOpen ? (
+											<X className="h-5 w-5" />
+										) : (
+											<Menu className="h-5 w-5" />
+										)}
+									</Button>
+								</div>
+								<div className="hidden md:inline-flex">
+									<Button
+										type="button"
+										variant="ghost"
+										size="icon"
+										onClick={toggleCollapsed}
+										title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+									>
+										<LayoutPanelLeft className="h-4 w-4" />
+									</Button>
+								</div>
 
 								<div className="md:hidden">
-									<Link to="/admin" className="font-semibold tracking-tight">
-										Ankh Admin
+									<Link
+										to="/admin"
+										className="flex items-center text-foreground"
+										aria-label="Back to dashboard"
+									>
+										<Home className="h-5 w-5" />
 									</Link>
 								</div>
 
@@ -277,6 +305,71 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 						</div>
 					</header>
 
+					<div
+						className={cn(
+							"fixed inset-0 z-50 md:hidden",
+							isMobileNavOpen ? "pointer-events-auto" : "pointer-events-none",
+						)}
+						aria-hidden={!isMobileNavOpen}
+					>
+						<button
+							type="button"
+							className={cn(
+								"absolute inset-0 bg-black/50 transition-opacity duration-200",
+								isMobileNavOpen ? "opacity-100" : "opacity-0",
+							)}
+							onClick={() => setIsMobileNavOpen(false)}
+							aria-label="Close menu"
+							tabIndex={isMobileNavOpen ? 0 : -1}
+						/>
+						<aside
+							className={cn(
+								"absolute left-0 top-0 flex h-full w-72 max-w-[85vw] flex-col border-r border-border bg-background transition-transform duration-200 ease-out",
+								isMobileNavOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full shadow-none",
+							)}
+						>
+							<div className="h-14 px-4 flex items-center justify-between border-b border-border">
+								<Link
+									to="/admin"
+									className="flex items-center gap-3"
+									tabIndex={isMobileNavOpen ? 0 : -1}
+								>
+									<span className="h-8 w-8 rounded-lg bg-primary/10 ring-1 ring-primary/20" />
+									<div className="leading-tight">
+										<div className="text-sm font-semibold">Ankh</div>
+										<div className="text-xs text-muted-foreground">Admin</div>
+									</div>
+								</Link>
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon"
+									onClick={() => setIsMobileNavOpen(false)}
+									aria-label="Close menu"
+									tabIndex={isMobileNavOpen ? 0 : -1}
+								>
+									<X className="h-5 w-5" />
+								</Button>
+							</div>
+							<nav className="flex-1 p-3 space-y-6 overflow-y-auto">
+								<NavGroup
+									title="Platform"
+									items={navItems.main}
+									isCollapsed={false}
+									onItemClick={() => setIsMobileNavOpen(false)}
+									itemTabIndex={isMobileNavOpen ? 0 : -1}
+								/>
+								<NavGroup
+									title="Management"
+									items={navItems.management}
+									isCollapsed={false}
+									onItemClick={() => setIsMobileNavOpen(false)}
+									itemTabIndex={isMobileNavOpen ? 0 : -1}
+								/>
+							</nav>
+						</aside>
+					</div>
+
 					<main className="flex-1 px-4 py-6 md:px-8">
 						<AdminContainer>{children}</AdminContainer>
 					</main>
@@ -290,10 +383,14 @@ function NavGroup({
 	title,
 	items,
 	isCollapsed,
+	onItemClick,
+	itemTabIndex,
 }: {
 	title: string;
 	items: NavItem[];
 	isCollapsed: boolean;
+	onItemClick?: () => void;
+	itemTabIndex?: number;
 }) {
 	const pathname = useRouterState({ select: (s) => s.location.pathname });
 	const normalizedPath = normalizePath(pathname);
@@ -321,6 +418,8 @@ function NavGroup({
 						<Link
 							key={item.to}
 							to={item.to}
+							onClick={onItemClick}
+							tabIndex={itemTabIndex}
 							className={cn(
 								"flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors",
 								isCollapsed && "justify-center",

@@ -1,9 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Search as SearchIcon, X as ClearIcon } from "lucide-react";
+import { Pencil, Search as SearchIcon, Trash2, X as ClearIcon } from "lucide-react";
 import { AdminPageHeader, AdminSurface } from "@/components/admin/AdminLayout";
-import { Button, buttonClassName } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -21,7 +21,6 @@ import {
 	getTags,
 	updateTag,
 } from "@/lib/api";
-import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/tags")({
 	component: TagsAdminPage,
@@ -345,25 +344,55 @@ function TagsAdminPage() {
 									<TableCell className="hidden md:table-cell text-sm text-muted-foreground">
 										{tag.usage_count ?? 0}
 									</TableCell>
-									<TableCell className="text-right space-x-2">
-										<button
-											type="button"
-											className={buttonClassName({ variant: "outline", size: "sm" })}
-											onClick={() => openEditDialog(tag)}
-										>
-											Edit
-										</button>
-										<button
-											type="button"
-											className={cn(
-												buttonClassName({ variant: "ghost", size: "sm" }),
-												"text-destructive",
-											)}
-											onClick={() => deleteMutation.mutate(tag.id)}
-											disabled={deleteMutation.isPending}
-										>
-											Delete
-										</button>
+									<TableCell className="text-right">
+										<div className="hidden justify-end gap-2 sm:flex">
+											<Button
+												type="button"
+												variant="outline"
+												size="sm"
+												onClick={() => openEditDialog(tag)}
+											>
+												<Pencil className="h-4 w-4" />
+												Edit
+											</Button>
+											<Button
+												type="button"
+												variant="destructive"
+												size="sm"
+												onClick={() => {
+													if (!confirm(`Delete tag #${tag.id}?`)) return;
+													deleteMutation.mutate(tag.id);
+												}}
+												disabled={deleteMutation.isPending}
+											>
+												<Trash2 className="h-4 w-4" />
+												Delete
+											</Button>
+										</div>
+										<div className="flex justify-end gap-2 sm:hidden">
+											<Button
+												type="button"
+												variant="outline"
+												size="icon"
+												onClick={() => openEditDialog(tag)}
+												aria-label="Edit"
+											>
+												<Pencil className="h-4 w-4" />
+											</Button>
+											<Button
+												type="button"
+												variant="destructive"
+												size="icon"
+												disabled={deleteMutation.isPending}
+												onClick={() => {
+													if (!confirm(`Delete tag #${tag.id}?`)) return;
+													deleteMutation.mutate(tag.id);
+												}}
+												aria-label="Delete"
+											>
+												<Trash2 className="h-4 w-4" />
+											</Button>
+										</div>
 									</TableCell>
 								</TableRow>
 							))}
