@@ -212,7 +212,11 @@ export function createCategory(payload: {
 
 export function updateCategory(
 	id: number,
-	payload: Partial<{ name: string; emoji: string | null; description: string | null }>,
+	payload: Partial<{
+		name: string;
+		emoji: string | null;
+		description: string | null;
+	}>,
 ) {
 	return apiData<Category>(`/api/categories/${id}`, {
 		method: "PUT",

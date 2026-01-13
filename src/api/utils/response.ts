@@ -39,7 +39,7 @@ export const result = {
 		if (response.error) {
 			let message = response.error.message;
 			if (response.error.details) {
-				message = response.error.message + " [" + response.error.details + "]";
+				message = `${response.error.message}·[${response.error.details}]`;
 			}
 			return result.error(c, message || "Database error");
 		}

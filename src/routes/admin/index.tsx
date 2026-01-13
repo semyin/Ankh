@@ -15,7 +15,9 @@ import {
 } from "@/components/ui/table";
 import { getAdminArticles } from "@/lib/api";
 
-export const Route = createFileRoute("/admin/")({ component: AdminDashboardPage });
+export const Route = createFileRoute("/admin/")({
+	component: AdminDashboardPage,
+});
 
 type RangeKey = "3m" | "30d" | "7d";
 type TableTabKey = "outline" | "past" | "people" | "focus";
@@ -30,11 +32,13 @@ function AdminDashboardPage() {
 	});
 	const publishedCountQuery = useQuery({
 		queryKey: ["admin-articles", { scope: "published-count" }],
-		queryFn: () => getAdminArticles({ is_published: true, page: 1, pageSize: 1 }),
+		queryFn: () =>
+			getAdminArticles({ is_published: true, page: 1, pageSize: 1 }),
 	});
 	const draftCountQuery = useQuery({
 		queryKey: ["admin-articles", { scope: "draft-count" }],
-		queryFn: () => getAdminArticles({ is_published: false, page: 1, pageSize: 1 }),
+		queryFn: () =>
+			getAdminArticles({ is_published: false, page: 1, pageSize: 1 }),
 	});
 	const latestQuery = useQuery({
 		queryKey: ["admin-articles", { scope: "latest" }],
@@ -107,7 +111,12 @@ function AdminDashboardPage() {
 					<div className="space-y-1">
 						<div className="text-sm font-medium">Total Visitors</div>
 						<div className="text-sm text-muted-foreground">
-							Total for the last {range === "3m" ? "3 months" : range === "30d" ? "30 days" : "7 days"}
+							Total for the last{" "}
+							{range === "3m"
+								? "3 months"
+								: range === "30d"
+									? "30 days"
+									: "7 days"}
 						</div>
 					</div>
 					<SegmentedControl
@@ -165,16 +174,17 @@ function AdminDashboardPage() {
 						<TabButton active={tab === "past"} onClick={() => setTab("past")}>
 							Past Performance
 						</TabButton>
-						<TabButton active={tab === "people"} onClick={() => setTab("people")}>
+						<TabButton
+							active={tab === "people"}
+							onClick={() => setTab("people")}
+						>
 							Key Personnel
 						</TabButton>
 						<TabButton active={tab === "focus"} onClick={() => setTab("focus")}>
 							Focus Documents
 						</TabButton>
 					</div>
-					<div className="text-xs text-muted-foreground">
-						Tab: {tab}
-					</div>
+					<div className="text-xs text-muted-foreground">Tab: {tab}</div>
 				</div>
 
 				<div className="mt-4 overflow-hidden rounded-lg border border-border bg-background">
@@ -202,7 +212,9 @@ function AdminDashboardPage() {
 									<TableRow key={a.id}>
 										<TableCell>
 											<div className="font-medium">{a.title}</div>
-											<div className="text-xs text-muted-foreground">#{a.id}</div>
+											<div className="text-xs text-muted-foreground">
+												#{a.id}
+											</div>
 										</TableCell>
 										<TableCell>
 											<Badge variant={a.is_published ? "default" : "secondary"}>
@@ -330,8 +342,16 @@ function AreaChart({ values }: { values: number[] }) {
 			>
 				<defs>
 					<linearGradient id="area" x1="0" y1="0" x2="0" y2="1">
-						<stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.25" />
-						<stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
+						<stop
+							offset="0%"
+							stopColor="hsl(var(--primary))"
+							stopOpacity="0.25"
+						/>
+						<stop
+							offset="100%"
+							stopColor="hsl(var(--primary))"
+							stopOpacity="0"
+						/>
 					</linearGradient>
 				</defs>
 

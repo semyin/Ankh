@@ -31,7 +31,9 @@ export function AdminPageHeader({
 					</p>
 				) : null}
 			</div>
-			{actions ? <div className="flex items-center gap-2">{actions}</div> : null}
+			{actions ? (
+				<div className="flex items-center gap-2">{actions}</div>
+			) : null}
 		</div>
 	);
 }
@@ -52,14 +54,7 @@ export function AdminSurface({
 				className,
 			)}
 		>
-			<div
-				className={cn(
-					"rounded-xl p-0",
-					innerClassName,
-				)}
-			>
-				{children}
-			</div>
+			<div className={cn("rounded-xl p-0", innerClassName)}>{children}</div>
 		</div>
 	);
 }

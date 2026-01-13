@@ -69,7 +69,10 @@ function formFromProfile(profile: Profile): ProfileForm {
 function ProfileAdminPage() {
 	const queryClient = useQueryClient();
 	const [form, setForm] = useState<ProfileForm>(emptyForm);
-	const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+	const [status, setStatus] = useState<{
+		type: "success" | "error";
+		message: string;
+	} | null>(null);
 
 	const profileQuery = useQuery({
 		queryKey: ["profile-admin"],
@@ -102,7 +105,8 @@ function ProfileAdminPage() {
 		onError: (error) => {
 			setStatus({
 				type: "error",
-				message: error instanceof Error ? error.message : "Failed to save profile.",
+				message:
+					error instanceof Error ? error.message : "Failed to save profile.",
 			});
 		},
 	});
@@ -177,7 +181,9 @@ function ProfileAdminPage() {
 
 			<AdminSurface innerClassName="p-6">
 				{profileQuery.isPending ? (
-					<div className="text-sm text-muted-foreground">Loading profile...</div>
+					<div className="text-sm text-muted-foreground">
+						Loading profile...
+					</div>
 				) : profileQuery.error ? (
 					<div className="text-sm text-destructive">
 						{profileQuery.error instanceof Error
@@ -357,7 +363,9 @@ function ProfileAdminPage() {
 								<div
 									className={cn(
 										"text-sm",
-										status.type === "error" ? "text-destructive" : "text-emerald-500",
+										status.type === "error"
+											? "text-destructive"
+											: "text-emerald-500",
 									)}
 								>
 									{status.message}
@@ -400,4 +408,3 @@ function Field({
 		</div>
 	);
 }
-

@@ -21,7 +21,7 @@ app.post("/login", async (c) => {
 
 	setCookie(c, "access_token", data.session.access_token, {
 		httpOnly: true,
-		secure: import.meta.env.PROD ? true : false,
+		secure: !!import.meta.env.PROD,
 		maxAge: data.session.expires_in,
 	});
 

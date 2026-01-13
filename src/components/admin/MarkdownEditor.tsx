@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import MdEditor from "react-markdown-editor-lite";
 import type { UploadFunc } from "react-markdown-editor-lite";
 import "react-markdown-editor-lite/lib/index.css";
@@ -65,7 +71,8 @@ export function MarkdownEditor({
 	useEffect(() => {
 		if (typeof window === "undefined") return;
 		const mediaQuery = window.matchMedia("(min-width: 1024px)");
-		const listener = (event: MediaQueryListEvent) => setIsDesktop(event.matches);
+		const listener = (event: MediaQueryListEvent) =>
+			setIsDesktop(event.matches);
 		setIsDesktop(mediaQuery.matches);
 		if (typeof mediaQuery.addEventListener === "function") {
 			mediaQuery.addEventListener("change", listener);

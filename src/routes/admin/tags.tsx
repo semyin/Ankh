@@ -1,7 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Pencil, Search as SearchIcon, Trash2, X as ClearIcon } from "lucide-react";
+import {
+	Pencil,
+	Search as SearchIcon,
+	Trash2,
+	X as ClearIcon,
+} from "lucide-react";
 import { AdminPageHeader, AdminSurface } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,13 +19,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import {
-	Tag,
-	createTag,
-	deleteTag,
-	getTags,
-	updateTag,
-} from "@/lib/api";
+import { Tag, createTag, deleteTag, getTags, updateTag } from "@/lib/api";
 
 export const Route = createFileRoute("/admin/tags")({
 	component: TagsAdminPage,
@@ -65,11 +64,7 @@ function TagsAdminPage() {
 	const totalPages = Math.max(1, Math.ceil(total / pageSize));
 	const currentPage = Math.min(page, totalPages);
 	const paged = useMemo(
-		() =>
-			filtered.slice(
-				(currentPage - 1) * pageSize,
-				currentPage * pageSize,
-			),
+		() => filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize),
 		[filtered, currentPage],
 	);
 
@@ -116,7 +111,10 @@ function TagsAdminPage() {
 
 	const updateMutation = useMutation({
 		mutationFn: (payload: { id: number; body: FormState }) =>
-			updateTag(payload.id, { name: payload.body.name, img_url: payload.body.img_url || null }),
+			updateTag(payload.id, {
+				name: payload.body.name,
+				img_url: payload.body.img_url || null,
+			}),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["admin-tags"] });
 			closeDialog();
@@ -145,7 +143,9 @@ function TagsAdminPage() {
 	};
 
 	const isMutating =
-		createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
+		createMutation.isPending ||
+		updateMutation.isPending ||
+		deleteMutation.isPending;
 
 	const isDirty = useMemo(() => {
 		return searchInput.trim() !== search;
@@ -246,7 +246,9 @@ function TagsAdminPage() {
 					</div>
 					<div className="ml-auto flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
 						<div className="text-sm text-muted-foreground whitespace-nowrap">
-							<span className="font-medium text-foreground">Total: {total}</span>{" "}
+							<span className="font-medium text-foreground">
+								Total: {total}
+							</span>{" "}
 							<span className="text-muted-foreground" aria-hidden>
 								|
 							</span>{" "}
@@ -339,7 +341,9 @@ function TagsAdminPage() {
 									</TableCell>
 									<TableCell>
 										<div className="font-medium">{tag.name}</div>
-										<div className="text-xs text-muted-foreground">#{tag.id}</div>
+										<div className="text-xs text-muted-foreground">
+											#{tag.id}
+										</div>
 									</TableCell>
 									<TableCell className="hidden md:table-cell text-sm text-muted-foreground">
 										{tag.usage_count ?? 0}
@@ -402,7 +406,9 @@ function TagsAdminPage() {
 										colSpan={4}
 										className="py-8 text-center text-sm text-muted-foreground"
 									>
-										{listQuery.isPending ? "Loading..." : "No tags match your filters."}
+										{listQuery.isPending
+											? "Loading..."
+											: "No tags match your filters."}
 									</TableCell>
 								</TableRow>
 							) : null}

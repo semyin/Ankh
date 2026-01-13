@@ -1,7 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Pencil, Search as SearchIcon, Trash2, X as ClearIcon } from "lucide-react";
+import {
+	Pencil,
+	Search as SearchIcon,
+	Trash2,
+	X as ClearIcon,
+} from "lucide-react";
 import { AdminPageHeader, AdminSurface } from "@/components/admin/AdminLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,13 +22,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import {
-	Meta,
-	createMeta,
-	deleteMeta,
-	getMeta,
-	updateMeta,
-} from "@/lib/api";
+import { Meta, createMeta, deleteMeta, getMeta, updateMeta } from "@/lib/api";
 
 export const Route = createFileRoute("/admin/meta")({
 	component: AdminMetaPage,
@@ -103,7 +102,8 @@ function AdminMetaPage() {
 					)
 				: true;
 			const matchesType = resourceType
-				? (meta.resource_type ?? "").toLowerCase() === resourceType.toLowerCase()
+				? (meta.resource_type ?? "").toLowerCase() ===
+					resourceType.toLowerCase()
 				: true;
 			const matchesId =
 				resourceIdNumber === undefined
@@ -117,11 +117,7 @@ function AdminMetaPage() {
 	const totalPages = Math.max(1, Math.ceil(total / pageSize));
 	const currentPage = Math.min(page, totalPages);
 	const paged = useMemo(
-		() =>
-			filtered.slice(
-				(currentPage - 1) * pageSize,
-				currentPage * pageSize,
-			),
+		() => filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize),
 		[filtered, currentPage],
 	);
 
@@ -143,7 +139,14 @@ function AdminMetaPage() {
 			resourceTypeInput.trim() !== resourceType ||
 			resourceIdInput.trim() !== resourceId
 		);
-	}, [resourceId, resourceIdInput, resourceType, resourceTypeInput, search, searchInput]);
+	}, [
+		resourceId,
+		resourceIdInput,
+		resourceType,
+		resourceTypeInput,
+		search,
+		searchInput,
+	]);
 
 	const canClear = useMemo(() => {
 		return (
@@ -154,7 +157,14 @@ function AdminMetaPage() {
 			resourceType.length > 0 ||
 			resourceId.length > 0
 		);
-	}, [resourceId, resourceIdInput, resourceType, resourceTypeInput, search, searchInput]);
+	}, [
+		resourceId,
+		resourceIdInput,
+		resourceType,
+		resourceTypeInput,
+		search,
+		searchInput,
+	]);
 
 	const applyFilters = () => {
 		setSearch(searchInput.trim());
@@ -292,7 +302,9 @@ function AdminMetaPage() {
 				name: nextBody.name || null,
 				property: nextBody.property || null,
 				content: nextBody.content || null,
-				resource_type: nextBody.is_default ? null : nextBody.resource_type || null,
+				resource_type: nextBody.is_default
+					? null
+					: nextBody.resource_type || null,
 				resource_id: nextBody.is_default
 					? null
 					: nextBody.resource_id
@@ -400,7 +412,9 @@ function AdminMetaPage() {
 					</div>
 					<div className="ml-auto flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
 						<div className="text-sm text-muted-foreground whitespace-nowrap">
-							<span className="font-medium text-foreground">Total: {total}</span>{" "}
+							<span className="font-medium text-foreground">
+								Total: {total}
+							</span>{" "}
 							<span className="text-muted-foreground" aria-hidden>
 								|
 							</span>{" "}
@@ -428,7 +442,12 @@ function AdminMetaPage() {
 										if (event.key === "Enter") onGoToPage();
 									}}
 								/>
-								<Button variant="secondary" size="sm" type="button" onClick={onGoToPage}>
+								<Button
+									variant="secondary"
+									size="sm"
+									type="button"
+									onClick={onGoToPage}
+								>
 									Go
 								</Button>
 							</div>
@@ -491,7 +510,9 @@ function AdminMetaPage() {
 									<TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
 										{meta.resource_type ? (
 											<div>
-												<div className="text-foreground">{meta.resource_type}</div>
+												<div className="text-foreground">
+													{meta.resource_type}
+												</div>
 												<div className="text-xs text-muted-foreground">
 													ID: {meta.resource_id ?? "—"}
 												</div>
@@ -607,7 +628,10 @@ function AdminMetaPage() {
 								<Input
 									value={form.property}
 									onChange={(event) =>
-										setForm((prev) => ({ ...prev, property: event.target.value }))
+										setForm((prev) => ({
+											...prev,
+											property: event.target.value,
+										}))
 									}
 									placeholder="e.g. og:title"
 								/>

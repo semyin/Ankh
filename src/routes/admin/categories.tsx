@@ -1,7 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Pencil, Search as SearchIcon, Trash2, X as ClearIcon } from "lucide-react";
+import {
+	Pencil,
+	Search as SearchIcon,
+	Trash2,
+	X as ClearIcon,
+} from "lucide-react";
 import { AdminPageHeader, AdminSurface } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,11 +73,7 @@ function CategoriesAdminPage() {
 	const totalPages = Math.max(1, Math.ceil(total / pageSize));
 	const currentPage = Math.min(page, totalPages);
 	const paged = useMemo(
-		() =>
-			filtered.slice(
-				(currentPage - 1) * pageSize,
-				currentPage * pageSize,
-			),
+		() => filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize),
 		[filtered, currentPage],
 	);
 
@@ -154,7 +155,9 @@ function CategoriesAdminPage() {
 	};
 
 	const isMutating =
-		createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
+		createMutation.isPending ||
+		updateMutation.isPending ||
+		deleteMutation.isPending;
 
 	const isDirty = useMemo(() => {
 		return searchInput.trim() !== search;
@@ -256,7 +259,9 @@ function CategoriesAdminPage() {
 					</div>
 					<div className="ml-auto flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
 						<div className="text-sm text-muted-foreground whitespace-nowrap">
-							<span className="font-medium text-foreground">Total: {total}</span>{" "}
+							<span className="font-medium text-foreground">
+								Total: {total}
+							</span>{" "}
 							<span className="text-muted-foreground" aria-hidden>
 								|
 							</span>{" "}
@@ -325,7 +330,9 @@ function CategoriesAdminPage() {
 							<TableRow>
 								<TableHead className="w-[80px]">Emoji</TableHead>
 								<TableHead>Name</TableHead>
-								<TableHead className="hidden md:table-cell">Description</TableHead>
+								<TableHead className="hidden md:table-cell">
+									Description
+								</TableHead>
 								<TableHead className="text-right">Actions</TableHead>
 							</TableRow>
 						</TableHeader>
@@ -337,7 +344,9 @@ function CategoriesAdminPage() {
 									</TableCell>
 									<TableCell>
 										<div className="font-medium">{cat.name}</div>
-										<div className="text-xs text-muted-foreground">#{cat.id}</div>
+										<div className="text-xs text-muted-foreground">
+											#{cat.id}
+										</div>
 									</TableCell>
 									<TableCell className="hidden md:table-cell text-sm text-muted-foreground">
 										{cat.description ?? "-"}
@@ -445,7 +454,10 @@ function CategoriesAdminPage() {
 								rows={3}
 								value={form.description}
 								onChange={(event) =>
-									setForm((prev) => ({ ...prev, description: event.target.value }))
+									setForm((prev) => ({
+										...prev,
+										description: event.target.value,
+									}))
 								}
 							/>
 						</div>

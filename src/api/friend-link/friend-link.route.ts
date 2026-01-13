@@ -1,72 +1,95 @@
-export { app as friendLinkRoute }
+export { app as friendLinkRoute };
 
-import { createApp } from '@/api/utils'
-import { result } from '@/api/utils/response'
+import { createApp } from "@/api/utils";
+import { result } from "@/api/utils/response";
 
-const app = createApp()
+const app = createApp();
 
-app.get('/', async (c) => {
-  const supabase = c.get('supabase')
-  const { is_visible } = c.req.query()
+app.get("/", async (c) => {
+	const supabase = c.get("supabase");
+	const { is_visible } = c.req.query();
 
-  let query = supabase
-    .from('friend_link')
-    .select('*')
-    .order('sort_weight', { ascending: false })
-    .order('created_at', { ascending: false })
+	let query = supabase
+		.from("friend_link")
+		.select("*")
+		.order("sort_weight", { ascending: false })
+		.order("created_at", { ascending: false });
 
-  if (typeof is_visible !== 'undefined') {
-    query = query.eq('is_visible', is_visible === 'true')
-  }
+	if (typeof is_visible !== "undefined") {
+		query = query.eq("is_visible", is_visible === "true");
+	}
 
-  const response = await query
+	const response = await query;
 
-  return result.from(c, response)
-})
+	return result.from(c, response);
+});
 
-app.get('/:id', async (c) => {
-  const id = Number(c.req.param('id'))
-  const supabase = c.get('supabase')
+app.get("/:id", async (c) => {
+	const id = Number(c.req.param("id"));
+	const supabase = c.get("supabase");
 
-  const response = await supabase.from('friend_link').select('*').eq('id', id).single()
+	const response = await supabase
+		.from("friend_link")
+		.select("*")
+		.eq("id", id)
+		.single();
 
-  return result.from(c, response)
-})
+	return result.from(c, response);
+});
 
-app.post('/', async (c) => {
-  const supabase = c.get('supabase')
-  const body = await c.req.json()
+app.post("/", async (c) => {
+	const supabase = c.get("supabase");
+	const body = await c.req.json();
 
-  const response = await supabase.from('friend_link').insert(body).select().single()
+	const response = await supabase
+		.from("friend_link")
+		.insert(body)
+		.select()
+		.single();
 
-  return result.from(c, response)
-})
+	return result.from(c, response);
+});
 
-app.put('/:id', async (c) => {
-  const id = Number(c.req.param('id'))
-  const supabase = c.get('supabase')
-  const body = await c.req.json()
+app.put("/:id", async (c) => {
+	const id = Number(c.req.param("id"));
+	const supabase = c.get("supabase");
+	const body = await c.req.json();
 
-  const response = await supabase.from('friend_link').update(body).eq('id', id).select().single()
+	const response = await supabase
+		.from("friend_link")
+		.update(body)
+		.eq("id", id)
+		.select()
+		.single();
 
-  return result.from(c, response)
-})
+	return result.from(c, response);
+});
 
-app.delete('/:id', async (c) => {
-  const id = Number(c.req.param('id'))
-  const supabase = c.get('supabase')
+app.delete("/:id", async (c) => {
+	const id = Number(c.req.param("id"));
+	const supabase = c.get("supabase");
 
-  const response = await supabase.from('friend_link').delete().eq('id', id).select().single()
+	const response = await supabase
+		.from("friend_link")
+		.delete()
+		.eq("id", id)
+		.select()
+		.single();
 
-  return result.from(c, response)
-})
+	return result.from(c, response);
+});
 
-app.patch('/:id/visibility', async (c) => {
-  const id = Number(c.req.param('id'))
-  const supabase = c.get('supabase')
-  const { is_visible } = await c.req.json<{ is_visible: boolean }>()
+app.patch("/:id/visibility", async (c) => {
+	const id = Number(c.req.param("id"));
+	const supabase = c.get("supabase");
+	const { is_visible } = await c.req.json<{ is_visible: boolean }>();
 
-  const response = await supabase.from('friend_link').update({ is_visible }).eq('id', id).select().single()
+	const response = await supabase
+		.from("friend_link")
+		.update({ is_visible })
+		.eq("id", id)
+		.select()
+		.single();
 
-  return result.from(c, response)
-})
+	return result.from(c, response);
+});

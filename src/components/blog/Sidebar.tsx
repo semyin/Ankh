@@ -63,8 +63,7 @@ export default function Sidebar() {
 							{profile?.description ?? "Frontend Developer"}
 						</p>
 						<p className="text-xs text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
-							{profile?.bio ??
-								"追求极致用户体验，分享技术与生活。"}
+							{profile?.bio ?? "追求极致用户体验，分享技术与生活。"}
 						</p>
 						<div className="flex gap-2 w-full">
 							<button
@@ -93,11 +92,18 @@ export default function Sidebar() {
 				</h4>
 				<div className="flex flex-wrap gap-2 min-h-[72px]">
 					{isTagsPending
-						? ["w-14", "w-20", "w-16", "w-24", "w-12", "w-20", "w-16", "w-24"].map(
-								(w, idx) => (
-									<Skeleton key={idx} className={`h-6 ${w} rounded`} />
-								),
-							)
+						? [
+								"w-14",
+								"w-20",
+								"w-16",
+								"w-24",
+								"w-12",
+								"w-20",
+								"w-16",
+								"w-24",
+							].map((w, idx) => (
+								<Skeleton key={idx} className={`h-6 ${w} rounded`} />
+							))
 						: topTags.map((t) => (
 								<button
 									key={t.id}
@@ -118,4 +124,3 @@ export default function Sidebar() {
 		</div>
 	);
 }
-

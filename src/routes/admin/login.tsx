@@ -8,7 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getMe, login } from "@/lib/api";
 
-export const Route = createFileRoute("/admin/login")({ component: AdminLoginPage });
+export const Route = createFileRoute("/admin/login")({
+	component: AdminLoginPage,
+});
 
 function AdminLoginPage() {
 	const navigate = useNavigate();
@@ -51,7 +53,9 @@ function AdminLoginPage() {
 					</div>
 					<div>
 						<div className="text-lg font-semibold tracking-tight">Sign in</div>
-						<div className="text-sm text-muted-foreground">Ankh Admin Console</div>
+						<div className="text-sm text-muted-foreground">
+							Ankh Admin Console
+						</div>
 					</div>
 				</div>
 
@@ -79,7 +83,9 @@ function AdminLoginPage() {
 						/>
 					</div>
 
-					{error ? <div className="text-sm text-destructive">{error}</div> : null}
+					{error ? (
+						<div className="text-sm text-destructive">{error}</div>
+					) : null}
 
 					<Button className="w-full" disabled={isSubmitting}>
 						{isSubmitting ? "Signing in..." : "Sign in"}
@@ -89,4 +95,3 @@ function AdminLoginPage() {
 		</div>
 	);
 }
-

@@ -1,7 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Pencil, Search as SearchIcon, Trash2, X as ClearIcon } from "lucide-react";
+import {
+	Pencil,
+	Search as SearchIcon,
+	Trash2,
+	X as ClearIcon,
+} from "lucide-react";
 import { AdminPageHeader, AdminSurface } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,8 +61,12 @@ function AdminLinksPage() {
 	const queryClient = useQueryClient();
 	const [searchInput, setSearchInput] = useState("");
 	const [search, setSearch] = useState("");
-	const [visibilityFilterInput, setVisibilityFilterInput] = useState<"all" | "visible" | "hidden">("all");
-	const [visibilityFilter, setVisibilityFilter] = useState<"all" | "visible" | "hidden">("all");
+	const [visibilityFilterInput, setVisibilityFilterInput] = useState<
+		"all" | "visible" | "hidden"
+	>("all");
+	const [visibilityFilter, setVisibilityFilter] = useState<
+		"all" | "visible" | "hidden"
+	>("all");
 	const [page, setPage] = useState(1);
 	const [pageInput, setPageInput] = useState("1");
 	const [dialogOpen, setDialogOpen] = useState(false);
@@ -100,11 +109,7 @@ function AdminLinksPage() {
 	const totalPages = Math.max(1, Math.ceil(total / pageSize));
 	const currentPage = Math.min(page, totalPages);
 	const paged = useMemo(
-		() =>
-			sorted.slice(
-				(currentPage - 1) * pageSize,
-				currentPage * pageSize,
-			),
+		() => sorted.slice((currentPage - 1) * pageSize, currentPage * pageSize),
 		[sorted, currentPage],
 	);
 
@@ -287,7 +292,8 @@ function AdminLinksPage() {
 						</div>
 					</div>
 					<div className="text-sm text-muted-foreground">
-						Search by name or description, and filter by visibility, then apply the filters.
+						Search by name or description, and filter by visibility, then apply
+						the filters.
 					</div>
 					<div className="grid gap-6 lg:grid-cols-2">
 						<div className="flex flex-col gap-5">
@@ -340,7 +346,9 @@ function AdminLinksPage() {
 					</div>
 					<div className="ml-auto flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
 						<div className="text-sm text-muted-foreground whitespace-nowrap">
-							<span className="font-medium text-foreground">Total: {total}</span>{" "}
+							<span className="font-medium text-foreground">
+								Total: {total}
+							</span>{" "}
 							<span className="text-muted-foreground" aria-hidden>
 								|
 							</span>{" "}
@@ -551,7 +559,10 @@ function AdminLinksPage() {
 								<Input
 									value={form.avatar_url}
 									onChange={(event) =>
-										setForm((prev) => ({ ...prev, avatar_url: event.target.value }))
+										setForm((prev) => ({
+											...prev,
+											avatar_url: event.target.value,
+										}))
 									}
 								/>
 							</div>
@@ -571,7 +582,10 @@ function AdminLinksPage() {
 									type="number"
 									value={form.sort_weight}
 									onChange={(event) =>
-										setForm((prev) => ({ ...prev, sort_weight: event.target.value }))
+										setForm((prev) => ({
+											...prev,
+											sort_weight: event.target.value,
+										}))
 									}
 								/>
 							</div>
@@ -597,7 +611,10 @@ function AdminLinksPage() {
 								rows={3}
 								value={form.description}
 								onChange={(event) =>
-									setForm((prev) => ({ ...prev, description: event.target.value }))
+									setForm((prev) => ({
+										...prev,
+										description: event.target.value,
+									}))
 								}
 							/>
 						</div>

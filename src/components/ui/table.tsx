@@ -20,7 +20,10 @@ export function TableHeader({
 	...props
 }: React.HTMLAttributes<HTMLTableSectionElement>) {
 	return (
-		<thead className={cn("border-border [&_tr]:border-b", className)} {...props} />
+		<thead
+			className={cn("border-border [&_tr]:border-b", className)}
+			{...props}
+		/>
 	);
 }
 
@@ -29,10 +32,7 @@ export function TableBody({
 	...props
 }: React.HTMLAttributes<HTMLTableSectionElement>) {
 	return (
-		<tbody
-			className={cn("[&_tr:last-child]:border-0", className)}
-			{...props}
-		/>
+		<tbody className={cn("[&_tr:last-child]:border-0", className)} {...props} />
 	);
 }
 

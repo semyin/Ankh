@@ -62,13 +62,21 @@ function normalizePath(pathname: string) {
 	return trimmed.length ? trimmed : "/";
 }
 
-export default function AdminShell({ children }: { children: React.ReactNode }) {
+export default function AdminShell({
+	children,
+}: {
+	children: React.ReactNode;
+}) {
 	const pathname = useRouterState({ select: (s) => s.location.pathname });
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
 	const { isDark, toggle } = useTheme();
 
-	const { data: me, isPending, isError } = useQuery({
+	const {
+		data: me,
+		isPending,
+		isError,
+	} = useQuery({
 		queryKey: ["admin-me"],
 		queryFn: getMe,
 		retry: false,
@@ -178,7 +186,11 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 					</div>
 
 					<nav className="flex-1 p-2 space-y-6">
-						<NavGroup title="Platform" items={navItems.main} isCollapsed={isCollapsed} />
+						<NavGroup
+							title="Platform"
+							items={navItems.main}
+							isCollapsed={isCollapsed}
+						/>
 						<NavGroup
 							title="Management"
 							items={navItems.management}
@@ -187,7 +199,12 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 					</nav>
 
 					<div className="border-t border-border bg-background p-3">
-						<div className={cn("flex items-center gap-3 rounded-lg px-2 py-2", isCollapsed && "justify-center px-0")}>
+						<div
+							className={cn(
+								"flex items-center gap-3 rounded-lg px-2 py-2",
+								isCollapsed && "justify-center px-0",
+							)}
+						>
 							<div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
 								<CircleUserRound className="h-5 w-5" />
 							</div>
@@ -275,7 +292,10 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 								<Link
 									to="/"
 									target="_blank"
-									className={buttonClassName({ variant: "ghost", size: "icon" })}
+									className={buttonClassName({
+										variant: "ghost",
+										size: "icon",
+									})}
 									title="View site"
 								>
 									<ExternalLink className="h-4 w-4" />
@@ -297,7 +317,10 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 									type="button"
 									onClick={onLogout}
 									title="Logout"
-									className={buttonClassName({ variant: "ghost", size: "icon" })}
+									className={buttonClassName({
+										variant: "ghost",
+										size: "icon",
+									})}
 								>
 									<LogOut className="h-4 w-4" />
 								</button>
@@ -325,7 +348,9 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 						<aside
 							className={cn(
 								"absolute left-0 top-0 flex h-full w-72 max-w-[85vw] flex-col border-r border-border bg-background transition-transform duration-200 ease-out",
-								isMobileNavOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full shadow-none",
+								isMobileNavOpen
+									? "translate-x-0 shadow-2xl"
+									: "-translate-x-full shadow-none",
 							)}
 						>
 							<div className="h-14 px-4 flex items-center justify-between border-b border-border">
@@ -448,7 +473,9 @@ function AdminBreadcrumbs({ pathname }: { pathname: string }) {
 	const section = parts[1] ?? "";
 	const sub = parts[2] ?? "";
 
-	const crumbs: Array<{ label: string; to?: string }> = [{ label: "Dashboard", to: "/admin" }];
+	const crumbs: Array<{ label: string; to?: string }> = [
+		{ label: "Dashboard", to: "/admin" },
+	];
 
 	const sectionLabel =
 		section === "articles"
@@ -465,7 +492,8 @@ function AdminBreadcrumbs({ pathname }: { pathname: string }) {
 								? "Profile"
 								: "";
 
-	if (sectionLabel) crumbs.push({ label: sectionLabel, to: `/admin/${section}` });
+	if (sectionLabel)
+		crumbs.push({ label: sectionLabel, to: `/admin/${section}` });
 
 	if (section === "articles") {
 		if (sub === "new") crumbs.push({ label: "New" });
@@ -475,7 +503,10 @@ function AdminBreadcrumbs({ pathname }: { pathname: string }) {
 	return (
 		<nav className="flex items-center gap-2 text-sm text-muted-foreground min-w-0">
 			{crumbs.map((c, idx) => (
-				<div key={`${c.label}-${idx}`} className="flex items-center gap-2 min-w-0">
+				<div
+					key={`${c.label}-${idx}`}
+					className="flex items-center gap-2 min-w-0"
+				>
 					{c.to ? (
 						<Link to={c.to} className="truncate hover:text-foreground">
 							{c.label}

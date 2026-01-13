@@ -38,7 +38,11 @@
 		color: hsl(var(--foreground));
 	}
 
-	.markdown-editor .rc-md-editor .editor-container > .section > .section-container {
+	.markdown-editor
+		.rc-md-editor
+		.editor-container
+		> .section
+		> .section-container {
 		padding: 0;
 	}
 
@@ -58,8 +62,9 @@
 	}
 
 	.markdown-editor__md .input {
-		font-family: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas,
-			"Liberation Mono", "Courier New", monospace;
+		font-family:
+			ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono",
+			"Courier New", monospace;
 		font-size: 0.9rem;
 		line-height: 1.6;
 		padding: 1rem 1.25rem;
