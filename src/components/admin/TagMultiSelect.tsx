@@ -1,5 +1,5 @@
-import type { Tag } from "@/lib/api";
 import { MultiSelectMenu } from "@/components/ui/select-menu";
+import type { Tag } from "@/lib/api";
 
 export function TagMultiSelect({
 	tags,

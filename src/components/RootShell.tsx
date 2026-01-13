@@ -1,6 +1,6 @@
-﻿import { useRouterState } from "@tanstack/react-router";
-import AdminShell from "@/components/admin/AdminShell";
+import { useRouterState } from "@tanstack/react-router";
 import AppShell from "@/components/AppShell";
+import AdminShell from "@/components/admin/AdminShell";
 
 export default function RootShell({ children }: { children: React.ReactNode }) {
 	const pathname = useRouterState({ select: (s) => s.location.pathname });

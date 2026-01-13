@@ -11,7 +11,12 @@ type Bindings = {
 	KV: KVNamespace;
 };
 
-// Mock KV for development
+type MockKVListResult = {
+	keys: Array<{ name: string }>;
+	list_complete: boolean;
+	cursor: string;
+};
+
 class MockKV {
 	private store = new Map<string, string>();
 
@@ -22,7 +27,7 @@ class MockKV {
 	async put(
 		key: string,
 		value: string,
-		options?: { expirationTtl?: number },
+		_options?: { expirationTtl?: number },
 	): Promise<void> {
 		this.store.set(key, value);
 	}
@@ -31,7 +36,7 @@ class MockKV {
 		this.store.delete(key);
 	}
 
-	async list(): Promise<any> {
+	async list(): Promise<MockKVListResult> {
 		return {
 			keys: Array.from(this.store.keys()).map((name) => ({ name })),
 			list_complete: true,
@@ -39,28 +44,28 @@ class MockKV {
 		};
 	}
 
-	async getWithMetadata() {
+	async getWithMetadata(): Promise<{ value: string | null; metadata: null }> {
 		return { value: null, metadata: null };
 	}
 }
 
-// 全局 Mock KV 实例（只创建一次）
+// Global Mock KV instance (only created once)
 const mockKV = new MockKV();
 let mockKVInitialized = false;
 
 export const createApp = () => {
 	const app = new Hono<{ Variables: Variables; Bindings: Bindings }>();
 
-	// 在开发环境中注入 Mock KV
+	// Inject Mock KV in development environments
 	app.use("*", async (c, next) => {
 		if (!c.env?.KV) {
-			// @ts-ignore
+			// @ts-expect-error - Hono bindings are not defined locally
 			c.env = c.env || {};
-			// @ts-ignore
+			// @ts-expect-error - attach mock KV for development
 			c.env.KV = mockKV;
 
 			if (!mockKVInitialized) {
-				console.log("✓ Using Mock KV in development mode");
+				console.log("[mock-kv] Using Mock KV in development mode");
 				mockKVInitialized = true;
 			}
 		}

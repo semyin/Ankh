@@ -1,16 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
 import {
+	X as ClearIcon,
 	Pencil,
 	Search as SearchIcon,
 	Trash2,
-	X as ClearIcon,
 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { AdminPageHeader, AdminSurface } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SelectMenu } from "@/components/ui/select-menu";
+import { Switch } from "@/components/ui/switch";
 import {
 	Table,
 	TableBody,
@@ -20,12 +22,10 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { SelectMenu } from "@/components/ui/select-menu";
 import {
-	FriendLink,
 	createFriendLink,
 	deleteFriendLink,
+	type FriendLink,
 	getAdminFriendLinks,
 	setFriendLinkVisibility,
 	updateFriendLink,

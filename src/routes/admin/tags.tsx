@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
 import {
+	X as ClearIcon,
 	Pencil,
 	Search as SearchIcon,
 	Trash2,
-	X as ClearIcon,
 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { AdminPageHeader, AdminSurface } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { Tag, createTag, deleteTag, getTags, updateTag } from "@/lib/api";
+import { createTag, deleteTag, getTags, type Tag, updateTag } from "@/lib/api";
 
 export const Route = createFileRoute("/admin/tags")({
 	component: TagsAdminPage,

@@ -5,15 +5,15 @@ import React, {
 	useRef,
 	useState,
 } from "react";
-import MdEditor from "react-markdown-editor-lite";
 import type { UploadFunc } from "react-markdown-editor-lite";
+import MdEditor from "react-markdown-editor-lite";
 import "react-markdown-editor-lite/lib/index.css";
 import "./MarkdownEditor.css";
 
-import { renderMarkdown } from "@/lib/markdown";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { renderMarkdown } from "@/lib/markdown";
+import { cn } from "@/lib/utils";
 
 type MarkdownEditorProps = {
 	id: string;

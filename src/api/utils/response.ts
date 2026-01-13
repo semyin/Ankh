@@ -1,7 +1,7 @@
 import { formatInTimeZone } from "date-fns-tz";
 import type { Context } from "hono";
 
-export interface SuccessResponse<T = any> {
+export interface SuccessResponse<T = unknown> {
 	code: number;
 	msg: string;
 	data: T;
@@ -12,6 +12,64 @@ export interface ErrorResponse {
 	code: number;
 	msg: string;
 }
+
+type ResponseError = {
+	message?: string;
+	details?: string;
+} | null;
+
+type ResultOptions<T> =
+	| string[]
+	| ((data: NonNullable<T>) => T | NonNullable<T>);
+
+const DEFAULT_TIME_FIELDS = ["created_at", "updated_at"];
+
+const formatTimestamps = (value: unknown, timeFields: string[]): unknown => {
+	if (value === null || value === undefined) return value;
+
+	if (Array.isArray(value)) {
+		return value.map((item) => formatTimestamps(item, timeFields));
+	}
+
+	if (typeof value === "object") {
+		const formattedEntries = Object.entries(
+			value as Record<string, unknown>,
+		).map(([key, fieldValue]) => {
+			if (timeFields.includes(key) && fieldValue) {
+				try {
+					const formatted = formatInTimeZone(
+						new Date(fieldValue as string),
+						"Asia/Shanghai",
+						"yyyy-MM-dd HH:mm:ss",
+					);
+					return [key, formatted];
+				} catch {
+					return [key, fieldValue];
+				}
+			}
+
+			if (
+				fieldValue &&
+				(typeof fieldValue === "object" || Array.isArray(fieldValue))
+			) {
+				return [key, formatTimestamps(fieldValue, timeFields)];
+			}
+
+			return [key, fieldValue];
+		});
+
+		return Object.fromEntries(formattedEntries);
+	}
+
+	return value;
+};
+
+const normalizeErrorMessage = (error: ResponseError) => {
+	if (!error) return "Database error";
+
+	const base = error.message || "Database error";
+	return error.details ? `${base} · [${error.details}]` : base;
+};
 
 /**
  * Unified result handler
@@ -30,70 +88,24 @@ export const result = {
 		c: Context,
 		response: {
 			data: T | null;
-			error: any;
+			error: ResponseError;
 			count?: number | null;
 			statusText?: string;
 		},
-		options?: string[] | ((data: NonNullable<T>) => any),
+		options?: ResultOptions<T>,
 	) {
 		if (response.error) {
-			let message = response.error.message;
-			if (response.error.details) {
-				message = `${response.error.message}·[${response.error.details}]`;
-			}
-			return result.error(c, message || "Database error");
+			return result.error(c, normalizeErrorMessage(response.error));
 		}
 
-		let data: any = response.data;
+		const timeFields = Array.isArray(options) ? options : DEFAULT_TIME_FIELDS;
+		const transformer = typeof options === "function" ? options : undefined;
 
-		// 格式化时间字段
-		const timeFields = Array.isArray(options)
-			? options
-			: ["created_at", "updated_at"];
+		let data: T | null = response.data;
+		data = formatTimestamps(data, timeFields) as T | null;
 
-		const formatTime = (obj: any): any => {
-			if (!obj) return obj;
-			if (Array.isArray(obj)) return obj.map(formatTime);
-			if (typeof obj === "object") {
-				const result: any = {};
-				for (const key in obj) {
-					const value = obj[key];
-
-					// 如果是时间字段，格式化
-					if (timeFields.includes(key) && value) {
-						try {
-							result[key] = formatInTimeZone(
-								new Date(value),
-								"Asia/Shanghai",
-								"yyyy-MM-dd HH:mm:ss",
-							);
-						} catch {
-							result[key] = value;
-						}
-					}
-					// 如果是对象或数组，递归处理
-					else if (
-						value &&
-						(typeof value === "object" || Array.isArray(value))
-					) {
-						result[key] = formatTime(value);
-					}
-					// 其他值直接赋值
-					else {
-						result[key] = value;
-					}
-				}
-				return result;
-			}
-			return obj;
-		};
-
-		// 格式化时间
-		data = formatTime(data);
-
-		// 执行自定义转换函数
-		if (typeof options === "function") {
-			data = data ? options(data) : data;
+		if (transformer && data) {
+			data = transformer(data as NonNullable<T>);
 		}
 
 		return result.ok(c, data, response.statusText || "Success", response.count);
@@ -104,7 +116,7 @@ export const result = {
 				code: status,
 				msg,
 			},
-			status as any,
+			status,
 		);
 	},
 };

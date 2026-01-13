@@ -4,7 +4,7 @@ import { CheckCircle2, ImageUp, Info, Save } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { AdminPageHeader, AdminSurface } from "@/components/admin/AdminLayout";
 import { MarkdownEditor } from "@/components/admin/MarkdownEditor";
-import { MetaEditor, type MetaDraft } from "@/components/admin/MetaEditor";
+import { type MetaDraft, MetaEditor } from "@/components/admin/MetaEditor";
 import { TagMultiSelect } from "@/components/admin/TagMultiSelect";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,8 +21,8 @@ import {
 	getTags,
 	setArticlePublished,
 	setArticleTags,
-	updateMeta,
 	updateArticle,
+	updateMeta,
 	uploadImage,
 } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";

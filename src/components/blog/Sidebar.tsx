@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useMemo } from "react";
-import Skeleton from "@/components/Skeleton";
 import RealtimeCard from "@/components/blog/RealtimeCard";
 import WeatherCard from "@/components/blog/WeatherCard";
+import Skeleton from "@/components/Skeleton";
 import { getProfile, getTags } from "@/lib/api";
 
 function ProfileCardSkeleton() {

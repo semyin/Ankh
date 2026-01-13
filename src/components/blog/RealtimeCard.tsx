@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 
 function pad2(n: number) {
 	return String(n).padStart(2, "0");
@@ -6,6 +6,9 @@ function pad2(n: number) {
 
 export default function RealtimeCard() {
 	const [now, setNow] = useState(() => new Date());
+	const tzId = useId();
+	const timeId = useId();
+	const dateId = useId();
 
 	useEffect(() => {
 		const id = window.setInterval(() => setNow(new Date()), 1000);
@@ -51,19 +54,19 @@ export default function RealtimeCard() {
 				<h4 className="font-bold text-xs text-gray-900 dark:text-white uppercase tracking-wider">
 					实时信息
 				</h4>
-				<span id="realtime-tz" className="text-[10px] text-gray-400">
+				<span id={tzId} className="text-[10px] text-gray-400">
 					{tzText}
 				</span>
 			</div>
 			<div className="mt-3">
 				<div
-					id="realtime-time"
+					id={timeId}
 					className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums"
 				>
 					{timeText}
 				</div>
 				<div
-					id="realtime-date"
+					id={dateId}
 					className="mt-1 text-xs text-gray-500 dark:text-gray-400"
 				>
 					{dateText}

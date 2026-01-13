@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
 import {
+	X as ClearIcon,
 	Pencil,
 	Search as SearchIcon,
 	Trash2,
-	X as ClearIcon,
 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { AdminPageHeader, AdminSurface } from "@/components/admin/AdminLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,13 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { Meta, createMeta, deleteMeta, getMeta, updateMeta } from "@/lib/api";
+import {
+	createMeta,
+	deleteMeta,
+	getMeta,
+	type Meta,
+	updateMeta,
+} from "@/lib/api";
 
 export const Route = createFileRoute("/admin/meta")({
 	component: AdminMetaPage,

@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRouterState } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { getArticles } from "@/lib/api";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import SearchModal from "@/components/SearchModal";
+import { getArticles } from "@/lib/api";
 
 function useTheme() {
 	const [isDark, setIsDark] = useState(false);
@@ -90,9 +90,9 @@ function useReadingProgress(enabled: boolean) {
 	return progress;
 }
 
-function useCodeBlockCopy() {
+function useCodeBlockCopy(rootId: string) {
 	useEffect(() => {
-		const root = document.getElementById("app");
+		const root = document.getElementById(rootId);
 		if (!root) return;
 
 		const timers = new Map<HTMLButtonElement, number>();
@@ -171,23 +171,29 @@ function useCodeBlockCopy() {
 			}
 			timers.clear();
 		};
-	}, []);
+	}, [rootId]);
 }
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
 	const pathname = useRouterState({ select: (s) => s.location.pathname });
+	const pathnameRef = useRef(pathname);
 
 	const [isSearchOpen, setIsSearchOpen] = useState(false);
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 	const { isDark, toggle } = useTheme();
+	const readingProgressId = useId();
+	const appContainerId = useId();
+	const backToTopButtonId = useId();
 
 	useEffect(() => {
+		if (pathnameRef.current === pathname) return;
+		pathnameRef.current = pathname;
 		setIsSearchOpen(false);
 		setIsMobileMenuOpen(false);
 		window.scrollTo(0, 0);
 	}, [pathname]);
 
-	useCodeBlockCopy();
+	useCodeBlockCopy(appContainerId);
 
 	const isArticle = pathname.startsWith("/article/");
 	const readingProgress = useReadingProgress(isArticle);
@@ -220,7 +226,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 			/>
 
 			<div
-				id="reading-progress"
+				id={readingProgressId}
 				className={[
 					"fixed top-0 left-0 z-50 h-0.5 w-full bg-blue-600/80 dark:bg-blue-500/80 pointer-events-none",
 					isArticle ? "" : "hidden",
@@ -235,7 +241,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 			/>
 
 			<main
-				id="app"
+				id={appContainerId}
 				className="flex-grow w-full max-w-5xl mx-auto px-4 py-6 md:py-8"
 			>
 				{children}
@@ -243,7 +249,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
 			<div className="fixed inset-x-0 bottom-0 mx-auto max-w-5xl pointer-events-none z-40 px-4 mb-8">
 				<button
-					id="back-to-top"
+					id={backToTopButtonId}
 					type="button"
 					onClick={scrollToTop}
 					className={[

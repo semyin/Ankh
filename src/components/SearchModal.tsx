@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 export type SearchItem = {
 	id: number;
@@ -19,6 +19,9 @@ export default function SearchModal({
 	const navigate = useNavigate();
 	const [q, setQ] = useState("");
 	const inputRef = useRef<HTMLInputElement | null>(null);
+	const modalId = useId();
+	const inputId = useId();
+	const resultsId = useId();
 
 	useEffect(() => {
 		if (!open) return;
@@ -49,7 +52,7 @@ export default function SearchModal({
 	if (!open) return null;
 
 	return (
-		<div id="search-modal" className="fixed inset-0 z-50">
+		<div id={modalId} className="fixed inset-0 z-50">
 			<button
 				type="button"
 				className="modal-backdrop absolute inset-0 transition-opacity"
@@ -75,7 +78,7 @@ export default function SearchModal({
 						</svg>
 						<input
 							ref={inputRef}
-							id="search-input"
+							id={inputId}
 							type="text"
 							placeholder="搜索文章..."
 							className="w-full bg-transparent outline-none text-gray-900 dark:text-gray-100"
@@ -84,7 +87,7 @@ export default function SearchModal({
 							onChange={(e) => setQ(e.target.value)}
 						/>
 					</div>
-					<div id="search-results" className="max-h-[50vh] overflow-y-auto p-2">
+					<div id={resultsId} className="max-h-[50vh] overflow-y-auto p-2">
 						{q.trim().length === 0 ? null : results.length ? (
 							results.map((p) => (
 								<button
@@ -106,7 +109,7 @@ export default function SearchModal({
 							))
 						) : (
 							<div className="text-center py-4 text-gray-400 text-xs">
-								无结果
+								暂无结果
 							</div>
 						)}
 					</div>

@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
 import {
+	X as ClearIcon,
 	Pencil,
 	Search as SearchIcon,
 	Trash2,
-	X as ClearIcon,
 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { AdminPageHeader, AdminSurface } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import {
-	Category,
+	type Category,
 	createCategory,
 	deleteCategory,
 	getCategories,

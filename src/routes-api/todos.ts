@@ -1,5 +1,5 @@
-import { Hono } from "hono";
 import type { Context } from "hono";
+import { Hono } from "hono";
 
 // 创建 todos 路由
 const todos = new Hono();
@@ -18,7 +18,7 @@ todos.get("/", (c: Context) => {
 
 // 获取单个 todo
 todos.get("/:id", (c: Context) => {
-	const id = Number.parseInt(c.req.param("id"));
+	const id = Number.parseInt(c.req.param("id"), 10);
 	const todo = todoList.find((t) => t.id === id);
 
 	if (!todo) {
@@ -43,7 +43,7 @@ todos.post("/", async (c: Context) => {
 
 // 更新 todo
 todos.put("/:id", async (c: Context) => {
-	const id = Number.parseInt(c.req.param("id"));
+	const id = Number.parseInt(c.req.param("id"), 10);
 	const body = await c.req.json();
 	const todoIndex = todoList.findIndex((t) => t.id === id);
 
@@ -57,7 +57,7 @@ todos.put("/:id", async (c: Context) => {
 
 // 删除 todo
 todos.delete("/:id", (c: Context) => {
-	const id = Number.parseInt(c.req.param("id"));
+	const id = Number.parseInt(c.req.param("id"), 10);
 	const todoIndex = todoList.findIndex((t) => t.id === id);
 
 	if (todoIndex === -1) {
