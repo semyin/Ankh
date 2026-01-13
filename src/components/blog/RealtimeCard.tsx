@@ -5,46 +5,54 @@ function pad2(n: number) {
 }
 
 export default function RealtimeCard() {
-	const [now, setNow] = useState(() => new Date());
+	const [now, setNow] = useState<Date | null>(null);
+	const [timezoneInfo, setTimezoneInfo] = useState<string>("");
 	const tzId = useId();
 	const timeId = useId();
 	const dateId = useId();
 
 	useEffect(() => {
-		const id = window.setInterval(() => setNow(new Date()), 1000);
-		return () => window.clearInterval(id);
-	}, []);
+		const tick = () => setNow(new Date());
+		const computeTz = () => {
+			const offsetMin = -new Date().getTimezoneOffset();
+			const sign = offsetMin >= 0 ? "+" : "-";
+			const offsetAbs = Math.abs(offsetMin);
+			const offsetStr = `UTC${sign}${pad2(Math.floor(offsetAbs / 60))}:${pad2(
+				offsetAbs % 60,
+			)}`;
+			const tzName = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+			return tzName ? `${tzName} · ${offsetStr}` : offsetStr;
+		};
 
-	const tzText = useMemo(() => {
-		const offsetMin = -new Date().getTimezoneOffset();
-		const sign = offsetMin >= 0 ? "+" : "-";
-		const offsetAbs = Math.abs(offsetMin);
-		const offsetStr = `UTC${sign}${pad2(Math.floor(offsetAbs / 60))}:${pad2(
-			offsetAbs % 60,
-		)}`;
-		const tzName = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
-		return tzName ? `${tzName} · ${offsetStr}` : offsetStr;
+		tick();
+		setTimezoneInfo(computeTz());
+		const id = window.setInterval(tick, 1000);
+		return () => window.clearInterval(id);
 	}, []);
 
 	const timeText = useMemo(
 		() =>
-			new Intl.DateTimeFormat("zh-CN", {
-				hour: "2-digit",
-				minute: "2-digit",
-				second: "2-digit",
-				hour12: false,
-			}).format(now),
+			(now &&
+				new Intl.DateTimeFormat("zh-CN", {
+					hour: "2-digit",
+					minute: "2-digit",
+					second: "2-digit",
+					hour12: false,
+				}).format(now)) ||
+			"--:--:--",
 		[now],
 	);
 
 	const dateText = useMemo(
 		() =>
-			new Intl.DateTimeFormat("zh-CN", {
-				year: "numeric",
-				month: "2-digit",
-				day: "2-digit",
-				weekday: "short",
-			}).format(now),
+			(now &&
+				new Intl.DateTimeFormat("zh-CN", {
+					year: "numeric",
+					month: "2-digit",
+					day: "2-digit",
+					weekday: "short",
+				}).format(now)) ||
+			"-- -- --",
 		[now],
 	);
 
@@ -55,7 +63,7 @@ export default function RealtimeCard() {
 					实时信息
 				</h4>
 				<span id={tzId} className="text-[10px] text-gray-400">
-					{tzText}
+					{timezoneInfo || "本地时间"}
 				</span>
 			</div>
 			<div className="mt-3">
